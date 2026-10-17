@@ -143,6 +143,7 @@ model Collection {
   memberId  String
   member    Member           @relation(fields: [memberId], references: [id], onDelete: Cascade)
   name      String
+  icon      String           @default("folder")
   createdAt DateTime         @default(now())
   items     CollectionItem[]
 
