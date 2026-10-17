@@ -1,0 +1,23 @@
+{
+  "name": "Conclave — The Private Founders' Club",
+  "short_name": "Conclave",
+  "description": "An elite private club for startup & business builders. Membership is earned, never bought.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#12100b",
+  "theme_color": "#12100b",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
