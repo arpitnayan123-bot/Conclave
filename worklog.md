@@ -726,3 +726,22 @@ Stage Summary:
 - Fresh-clone experience fixed end-to-end (.env.example + db push + required-env documentation).
 - Sandbox credentials: member seat-1 arpitnayan123@gmail.com / conclave-seat-1; admin conclave-2025 (from .env, not code).
 - Note: previous demo creds (aarav demo1234) no longer exist - DB was empty (founding season); Seat 1 is now the canonical demo account.
+
+---
+Task ID: 23
+Agent: main (orchestrator)
+Task: "Done uploaded" — confirm GitHub publication closed out, revive dead cron, next backlog feature: collections icon picker (the mark)
+
+Work Log:
+- Confirmed Task 22 fully shipped: remote = local = da77a22 (153 commits), README live on raw.githubusercontent.com (crest + badges + manifesto verified), /home/z/TODO was only the prior session tracker snapshot (all items complete).
+- Cron audit: list EMPTY again (464918 dead — third disappearance). Recreated the 15-min webDevReview loop as job 464937 with full Conclave payload (six-chapter guard, invariants, honesty rule, Git policy, Turbopack recovery).
+- Backlog triage: campus filter for Directory was ALREADY implemented (chapter Select, shows when >1 chapter) — retired from backlog. Pagination (Room/Members) deferred: not verifiable at 1 member / 0 ideas. Chose the collections icon picker as this round's feature — fully browser-verifiable.
+- BUILT "the mark": ① prisma Collection.icon String @default("folder") + db:push; ② src/lib/collection-icons.ts — curated 14-glyph allowlist (folder/briefcase/gem/crown/compass/scale/telescope/key/star/sparkles/target/layers/handshake/pin) + labels, shared by server validation and client picker; voice rule respected (no forge/fire/steel glyphs); ③ APIs: GET returns icon, POST accepts optional icon (allowlist-validated), PATCH accepts name and/or icon independently; ④ CollectionIcon.tsx — id→Lucide map + CollectionIconPicker radiogroup (7-col grid, gold glow on active, aria-checked); ⑤ Collections.tsx — create flow gains Mark section, manager rows: icon button opens Popover picker (optimistic swap + rollback), rail chips render each folder's glyph, dialog title mirrors the pending mark.
+- BUG FIXED en route: POST /api/collections 500 "Unknown argument icon" — dev server was running the pre-dbis:push Prisma client. Restart (pkill + rm -rf .next) resolved; POST 201, PATCH 200.
+- VERIFIED (agent-browser, Seat 1): create "Diligence Shortlist" with scale mark → rail chip shows glyph; change mark via popover to gem → toast + optimistic swap; DB confirms {"name":"Diligence Shortlist","icon":"gem"}; reopen shows gem checked. Mobile 390: picker grid fits, dialog row truncates gracefully, documentElement.scrollWidth <= innerWidth (no overflow). Console: HMR logs only. bun run lint exit 0; tsc clean in all touched files.
+- Committed file-by-file (6 conventional commits, all authored Arpit Nayan). PUSH PENDING: no credentials on disk (by design — ephemeral PAT was discarded per Task 21 policy); needs a fresh token or user-side push. Remote URL verified clean (no embedded token).
+
+Stage Summary:
+- Collections are now marks of intent: 14 curated glyphs let a member say "this folder = due diligence" or "this one = the shortlist" at a glance, in rail, manager, and create flow, persisted server-side behind an allowlist.
+- Backlog now: push Task 23 commits to GitHub (needs fresh PAT), pagination for The Room/Members, invitation emails via Resend (domain verification), Directory batch actions idea.
+- Dev server restarted cleanly with regenerated Prisma client; auth APIs healthy (login 200 flows used for verification).
