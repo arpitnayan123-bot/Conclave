@@ -4,9 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Check, Folder, FolderPlus, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
 import { api } from "@/lib/api";
+import type { CollectionIconId } from "@/lib/collection-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Dialog,
   DialogContent,
@@ -17,10 +19,12 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import type { Idea } from "./types";
+import { CollectionIcon, CollectionIconPicker } from "./CollectionIcon";
 
 export type CollectionT = {
   id: string;
   name: string;
+  icon: string;
   ideaIds: string[];
 };
 
@@ -45,6 +49,7 @@ export function CollectionsDialog({
   onBookmarked?: (ideaId: string, bookmarked: boolean) => void;
 }) {
   const [name, setName] = useState("");
+  const [icon, setIcon] = useState<string>("folder");
   const [creating, setCreating] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [armedId, setArmedId] = useState<string | null>(null); // two-step delete
@@ -61,6 +66,7 @@ export function CollectionsDialog({
 
   const reset = () => {
     setName("");
+    setIcon("folder");
     setArmedId(null);
     setRenamingId(null);
     setRenameDraft("");
@@ -151,15 +157,41 @@ export function CollectionsDialog({
     setCreating(true);
     try {
       const res = await api<{ collection: CollectionT }>("/collections", {
-        body: { name: trimmed },
+        body: { name: trimmed, icon },
       });
       onCollectionsChange([...collections, res.collection]);
       setName("");
+      setIcon("folder");
       toast.success(`Folder “${res.collection.name}” created`);
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function changeIcon(collection: CollectionT, iconId: CollectionIconId) {
+    if (collection.icon === iconId) return;
+    const prev = collections;
+    // optimistic icon swap
+    onCollectionsChange(
+      collections.map((c) => (c.id === collection.id ? { ...c, icon: iconId } : c))
+    );
+    setBusyId(collection.id);
+    try {
+      const res = await api<{ collection: { id: string; name: string; icon: string } }>(
+        `/collections/${collection.id}`,
+        { method: "PATCH", body: { icon: iconId } }
+      );
+      onCollectionsChange(
+        prev.map((c) => (c.id === collection.id ? { ...c, icon: res.collection.icon } : c))
+      );
+      toast.success(`“${collection.name}” mark updated`);
+    } catch (err) {
+      onCollectionsChange(prev); // roll back
+      toast.error((err as Error).message);
+    } finally {
+      setBusyId(null);
     }
   }
 
@@ -195,7 +227,7 @@ export function CollectionsDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-display">
-            <Folder className="h-5 w-5 text-gold" aria-hidden />
+            <CollectionIcon id={idea ? null : icon} className="h-5 w-5 text-gold" />
             {idea ? "Add to a collection" : "Your collections"}
           </DialogTitle>
           <DialogDescription>
@@ -224,15 +256,40 @@ export function CollectionsDialog({
                   )}
                 >
                   {idea ? (
-                    <Checkbox
-                      checked={checked}
-                      disabled={busyId === c.id}
-                      onCheckedChange={(v) => void toggleMembership(c, v === true)}
-                      aria-label={checked ? `Remove from ${c.name}` : `Add to ${c.name}`}
-                      className="h-5 w-5 rounded-md data-[state=checked]:border-gold data-[state=checked]:bg-gold data-[state=checked]:text-background"
-                    />
+                    <>
+                      <Checkbox
+                        checked={checked}
+                        disabled={busyId === c.id}
+                        onCheckedChange={(v) => void toggleMembership(c, v === true)}
+                        aria-label={checked ? `Remove from ${c.name}` : `Add to ${c.name}`}
+                        className="h-5 w-5 rounded-md data-[state=checked]:border-gold data-[state=checked]:bg-gold data-[state=checked]:text-background"
+                      />
+                      <CollectionIcon id={c.icon} className="h-4 w-4 shrink-0 text-gold" />
+                    </>
                   ) : (
-                    <Folder className="h-4 w-4 shrink-0 text-gold" aria-hidden />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          disabled={busyId === c.id}
+                          aria-label={`Change the mark of ${c.name}`}
+                          title="Change the mark"
+                          className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-transparent text-gold transition-colors hover:border-gold/40 hover:bg-gold/10 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <CollectionIcon id={c.icon} className="h-4 w-4" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-3" side="bottom" align="start">
+                        <p className="mb-1.5 text-[11px] uppercase tracking-[0.14em] text-muted-foreground/70">
+                          Mark — {c.name}
+                        </p>
+                        <CollectionIconPicker
+                          value={c.icon}
+                          onChange={(id) => void changeIcon(c, id)}
+                          disabled={busyId === c.id}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   )}
                   {renaming ? (
                     <form
@@ -320,7 +377,14 @@ export function CollectionsDialog({
           )}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-2.5 sm:gap-2.5">
+          <div className="w-full space-y-2">
+            <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-muted-foreground/70">
+              <CollectionIcon id={icon} className="h-3.5 w-3.5 text-gold" aria-hidden={false} />
+              Mark
+            </p>
+            <CollectionIconPicker value={icon} onChange={setIcon} disabled={creating} />
+          </div>
           <form
             className="flex w-full items-center gap-2"
             onSubmit={(e) => {
@@ -404,7 +468,10 @@ export function CollectionsRail({
                 : "border-border/60 text-muted-foreground hover:border-gold/40 hover:text-gold"
             )}
           >
-            <Folder className={cn("h-3.5 w-3.5", c.ideaIds.length > 0 && "fill-current opacity-60")} aria-hidden />
+            <CollectionIcon
+              id={c.icon}
+              className={cn("h-3.5 w-3.5", c.ideaIds.length > 0 && "fill-current opacity-60")}
+            />
             <span className="max-w-[140px] truncate">{c.name}</span>
             <span className="text-[10px] opacity-70">{c.ideaIds.length}</span>
           </button>
