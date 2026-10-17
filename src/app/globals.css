@@ -1,0 +1,642 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-gold: var(--gold);
+  --color-emeraldx: var(--emeraldx);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Conclave — elite private club: obsidian, champagne gold, ivory, deep emerald accent */
+:root {
+  --radius: 0.75rem;
+  --background: oklch(0.145 0.012 80);
+  --foreground: oklch(0.94 0.02 92);
+  --card: oklch(0.185 0.014 78);
+  --card-foreground: oklch(0.94 0.02 92);
+  --popover: oklch(0.175 0.014 78);
+  --popover-foreground: oklch(0.94 0.02 92);
+  --primary: oklch(0.84 0.13 85);
+  --primary-foreground: oklch(0.17 0.04 80);
+  --secondary: oklch(0.25 0.016 78);
+  --secondary-foreground: oklch(0.94 0.015 92);
+  --muted: oklch(0.23 0.012 78);
+  --muted-foreground: oklch(0.71 0.022 88);
+  --accent: oklch(0.27 0.02 82);
+  --accent-foreground: oklch(0.94 0.02 92);
+  --destructive: oklch(0.65 0.2 25);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.84 0.13 85 / 55%);
+  --gold: oklch(0.84 0.13 85);
+  --emeraldx: oklch(0.79 0.16 163);
+  --chart-1: oklch(0.84 0.13 85);
+  --chart-2: oklch(0.79 0.16 163);
+  --chart-3: oklch(0.75 0.12 60);
+  --chart-4: oklch(0.9 0.09 95);
+  --chart-5: oklch(0.7 0.15 145);
+  --sidebar: oklch(0.17 0.014 78);
+  --sidebar-foreground: oklch(0.94 0.02 92);
+  --sidebar-primary: oklch(0.84 0.13 85);
+  --sidebar-primary-foreground: oklch(0.17 0.04 80);
+  --sidebar-accent: oklch(0.25 0.016 78);
+  --sidebar-accent-foreground: oklch(0.94 0.02 92);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.84 0.13 85 / 55%);
+}
+
+.dark {
+  --background: oklch(0.145 0.012 80);
+  --foreground: oklch(0.94 0.02 92);
+  --card: oklch(0.185 0.014 78);
+  --card-foreground: oklch(0.94 0.02 92);
+  --popover: oklch(0.175 0.014 78);
+  --popover-foreground: oklch(0.94 0.02 92);
+  --primary: oklch(0.84 0.13 85);
+  --primary-foreground: oklch(0.17 0.04 80);
+  --secondary: oklch(0.25 0.016 78);
+  --secondary-foreground: oklch(0.94 0.015 92);
+  --muted: oklch(0.23 0.012 78);
+  --muted-foreground: oklch(0.71 0.022 88);
+  --accent: oklch(0.27 0.02 82);
+  --accent-foreground: oklch(0.94 0.02 92);
+  --destructive: oklch(0.65 0.2 25);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.84 0.13 85 / 55%);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground;
+    /* Clip horizontal overflow at the body level: decorative sweeps
+       (.divider-glow::after travels to 100vw+140px) and marquees extend the
+       scrollable overflow and made the page wobble sideways ("screen changing
+       size"). clip keeps vertical scrolling + sticky intact, unlike hidden. */
+    overflow-x: clip;
+    background-image:
+      radial-gradient(1200px 600px at 80% -10%, oklch(0.84 0.13 85 / 7%), transparent 60%),
+      radial-gradient(900px 500px at -10% 30%, oklch(0.79 0.16 163 / 4.5%), transparent 55%);
+    background-attachment: fixed;
+  }
+  ::selection {
+    background: oklch(0.84 0.13 85 / 30%);
+  }
+}
+
+/* ---------- custom scrollbar ---------- */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: oklch(0.84 0.13 85 / 22%);
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.84 0.13 85 / 40%);
+}
+
+/* ---------- utilities ---------- */
+.font-display {
+  font-family: var(--font-display), var(--font-geist-sans), sans-serif;
+}
+
+.glass {
+  background: oklch(0.21 0.012 78 / 55%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid oklch(1 0 0 / 8%);
+}
+
+.text-gradient {
+  background: linear-gradient(100deg, oklch(0.96 0.02 95) 8%, oklch(0.9 0.11 92) 45%, oklch(0.84 0.13 85) 82%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.text-gradient-gold {
+  background: linear-gradient(100deg, oklch(0.93 0.1 95), oklch(0.84 0.13 85), oklch(0.74 0.11 72));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* legacy name, champagne-gold glow — used by primary CTAs */
+.glow-emerald {
+  box-shadow: 0 0 24px oklch(0.84 0.13 85 / 28%), 0 0 64px oklch(0.84 0.13 85 / 12%);
+}
+
+.card-hover {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.35s, box-shadow 0.35s;
+}
+.card-hover:hover {
+  transform: translateY(-4px);
+  border-color: oklch(0.84 0.13 85 / 35%);
+  box-shadow: 0 12px 40px -12px oklch(0.84 0.13 85 / 25%);
+}
+
+/* hover top-beam — a champagne hairline sweeps in across the card's top edge */
+.card-beam {
+  position: relative;
+}
+.card-beam::before {
+  content: "";
+  position: absolute;
+  inset: 0 12% auto 12%;
+  height: 2px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    oklch(0.9 0.09 95 / 75%),
+    oklch(0.84 0.13 85 / 75%),
+    transparent
+  );
+  opacity: 0;
+  transform: scaleX(0.6);
+  transition: opacity 0.4s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+.card-beam:hover::before {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+/* soft gold wash that fades in behind interactive rows on hover */
+.row-glow {
+  transition: background-color 0.25s ease, box-shadow 0.25s ease;
+}
+.row-glow:hover {
+  background-color: oklch(0.84 0.13 85 / 6%);
+  box-shadow: inset 0 0 0 1px oklch(0.84 0.13 85 / 18%);
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(oklch(1 0 0 / 3.5%) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(1 0 0 / 3.5%) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 30%, black 40%, transparent 100%);
+}
+
+.noise::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 36s linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 oklch(0.84 0.13 85 / 35%); }
+  70% { box-shadow: 0 0 0 14px oklch(0.84 0.13 85 / 0%); }
+  100% { box-shadow: 0 0 0 0 oklch(0.84 0.13 85 / 0%); }
+}
+.animate-pulse-ring {
+  animation: pulse-ring 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes shine {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+.animate-shine {
+  background-size: 200% auto;
+  animation: shine 5s linear infinite;
+}
+
+/* ---------- detail polish: kbd chips, dividers, CTA sweep ---------- */
+
+/* keyboard shortcut chip — used across the review console + shortcut sheets.
+   Lives in @layer components so Tailwind utilities (e.g. `hidden`) can override
+   display — unlayered it defeated `hidden` and leaked ⌘K onto phones. */
+@layer components {
+  .kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.55rem;
+    height: 1.55rem;
+    padding: 0 0.4rem;
+    border-radius: 0.375rem;
+    border: 1px solid oklch(1 0 0 / 14%);
+    border-bottom-width: 2px;
+    background: oklch(0.26 0.016 78 / 80%);
+    color: var(--foreground);
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1;
+    box-shadow: 0 1px 0 oklch(0 0 0 / 35%);
+  }
+}
+
+/* glowing gradient divider between landing sections */
+.divider-glow {
+  position: relative;
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, oklch(0.84 0.13 85 / 26%) 18%, oklch(0.79 0.16 163 / 22%) 50%, oklch(0.84 0.13 85 / 26%) 82%, transparent);
+}
+.divider-glow::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 0;
+  height: 3px;
+  width: 130px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, oklch(0.9 0.09 95 / 85%), oklch(0.84 0.13 85 / 85%), transparent);
+  filter: blur(1px);
+  animation: divider-sweep 7s ease-in-out infinite;
+}
+@keyframes divider-sweep {
+  0% { transform: translateX(-140px); opacity: 0; }
+  15% { opacity: 1; }
+  50% { transform: translateX(calc(100vw)); opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translateX(calc(100vw + 140px)); opacity: 0; }
+}
+
+/* primary CTA shine sweep on hover */
+.cta-shine {
+  position: relative;
+  overflow: hidden;
+}
+.cta-shine::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: linear-gradient(105deg, transparent, oklch(1 0 0 / 35%), transparent);
+  transform: translateX(-120%) skewX(-18deg);
+  transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+.cta-shine:hover::before {
+  transform: translateX(320%) skewX(-18deg);
+}
+
+/* blueprint corner marks (decorative + / · accents) */
+.corner-marks {
+  position: relative;
+}
+.corner-marks::before,
+.corner-marks::after {
+  content: "+";
+  position: absolute;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.8rem;
+  color: oklch(0.84 0.13 85 / 45%);
+  pointer-events: none;
+}
+.corner-marks::before { top: 6px; left: 10px; }
+.corner-marks::after { bottom: 6px; right: 10px; }
+
+/* ---------- premium pass: spotlight cards, nav hairline, menu typography ---------- */
+
+/* mouse-tracking spotlight wash for cards — JS sets --spot-x/--spot-y */
+.spotlight {
+  position: relative;
+}
+.spotlight::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    300px circle at var(--spot-x, 50%) var(--spot-y, 0%),
+    oklch(0.84 0.13 85 / 8%),
+    oklch(0.79 0.16 163 / 3.5%) 42%,
+    transparent 68%
+  );
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  pointer-events: none;
+}
+.spotlight:hover::after {
+  opacity: 1;
+}
+
+/* nav links with an animated gradient underline */
+.nav-link {
+  position: relative;
+}
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 9px;
+  height: 1.5px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, oklch(0.9 0.09 95 / 85%), oklch(0.84 0.13 85 / 85%));
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+.nav-link:hover::after,
+.nav-link:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* gradient hairline along the nav's bottom edge */
+.nav-hairline {
+  position: relative;
+}
+.nav-hairline::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    oklch(0.84 0.13 85 / 28%) 30%,
+    oklch(0.79 0.16 163 / 22%) 70%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* menu overlay mega-links — champagne→gold gradient text on hover */
+.menu-link .menu-link-label {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.menu-link:hover .menu-link-label,
+.menu-link:focus-visible .menu-link-label {
+  transform: translateX(6px);
+  background-image: linear-gradient(100deg, oklch(0.96 0.02 95), oklch(0.84 0.13 85));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* marquee pills get a soft glow + lift on hover */
+.pill-glow {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, color 0.3s ease, transform 0.3s ease;
+}
+.pill-glow:hover {
+  border-color: oklch(0.84 0.13 85 / 45%);
+  box-shadow: 0 0 20px -4px oklch(0.84 0.13 85 / 35%);
+  color: var(--foreground);
+  transform: translateY(-1px);
+}
+
+/* status checker timeline dots */
+.track-dot {
+  position: relative;
+  flex-shrink: 0;
+}
+.track-dot::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 9999px;
+  border: 1px solid currentColor;
+  opacity: 0.25;
+}
+
+/* ---------- club detail pass: seal, engraved text, velvet panel ---------- */
+
+/* circular club seal — rotating engraved ring, center monogram */
+.club-seal {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.club-seal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 1px solid oklch(0.84 0.13 85 / 40%);
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+  animation: seal-spin 14s linear infinite;
+}
+.club-seal::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: 9999px;
+  border: 1px dashed oklch(0.84 0.13 85 / 28%);
+}
+@keyframes seal-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* engraved plate text — debossed letters like a brass door plate */
+.engraved {
+  color: oklch(0.9 0.06 92);
+  text-shadow:
+    0 1px 0 oklch(0 0 0 / 45%),
+    0 -1px 1px oklch(0.84 0.13 85 / 18%);
+}
+
+/* velvet panel — deep plush card used by charter + menu rails */
+.velvet {
+  background:
+    radial-gradient(140% 120% at 20% 0%, oklch(0.84 0.13 85 / 6%), transparent 55%),
+    linear-gradient(180deg, oklch(0.2 0.016 78 / 88%), oklch(0.16 0.014 78 / 92%));
+  border: 1px solid oklch(0.84 0.13 85 / 14%);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 6%), 0 24px 60px -30px oklch(0 0 0 / 65%);
+}
+
+/* ornamental rule with a centered diamond */
+.rule-diamond {
+  position: relative;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, oklch(0.84 0.13 85 / 30%), transparent);
+}
+.rule-diamond::after {
+  content: "◆";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -54%);
+  font-size: 9px;
+  color: oklch(0.84 0.13 85 / 70%);
+  background: var(--background);
+  padding: 0 10px;
+  line-height: 1;
+}
+
+/* small gold caps label — section micro-headings (charter, menu rails) */
+.micro-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+/* ---------- view transitions & global polish ---------- */
+
+html {
+  scroll-behavior: smooth;
+  /* Always reserve the scrollbar track so the viewport width never jumps
+     when the scrollbar appears/disappears (menu scroll-lock, view switches,
+     short pages). This is the root fix for the "screen is changing size" bug. */
+  scrollbar-gutter: stable;
+  /* Non-static root: framer-motion useScroll({ target }) measures against
+     documentElement and warns (dev-only) when it is position: static.
+     Relative here is visually identical but silences the warning and makes
+     offset measurement well-defined. */
+  position: relative;
+}
+
+::selection {
+  background: oklch(0.84 0.13 85 / 30%);
+  color: var(--foreground);
+}
+
+@keyframes view-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    /* transform:none keeps fixed-position descendants (mobile tab bar,
+       FABs) anchored to the viewport once the entrance animation ends */
+    transform: none;
+  }
+}
+.animate-view-in {
+  /* backwards (not both): fill only the pre-animation frame, then release
+     all animation styles so fixed-position descendants (mobile tab bar,
+     FABs) anchor to the real viewport — retained transforms create a
+     containing block that breaks position:fixed */
+  animation: view-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/* respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-view-in,
+  .animate-marquee,
+  .animate-float-slow,
+  .animate-pulse-ring,
+  .animate-shine,
+  .divider-glow::after,
+  .cta-shine::before,
+  .spotlight::after,
+  .nav-link::after,
+  .pill-glow,
+  .menu-link .menu-link-label,
+  .club-seal::before {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---------- Task 16-a: premium top half (nav / hero / back-to-top) ---------- */
+
+/* gold diamond crest marker that scales in above nav links on hover/focus.
+   Pairs with .nav-link (which animates the underline) — apply BOTH classes.
+   Kept as a separate utility so the existing .nav-link rule stays untouched. */
+.nav-link-diamond {
+  position: relative;
+}
+.nav-link-diamond::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: linear-gradient(135deg, oklch(0.93 0.1 95), oklch(0.84 0.13 85));
+  box-shadow: 0 0 8px oklch(0.84 0.13 85 / 55%);
+  transform: translateX(-50%) rotate(45deg) scale(0);
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
+  pointer-events: none;
+}
+.nav-link-diamond:hover::before,
+.nav-link-diamond:focus-visible::before {
+  transform: translateX(-50%) rotate(45deg) scale(1);
+  opacity: 1;
+}
+
+/* reduced-motion: kill the crest marker's transition too (companion to the
+   existing guard block above — appended, never edited) */
+@media (prefers-reduced-motion: reduce) {
+  .nav-link-diamond::before {
+    transition: none !important;
+  }
+}
