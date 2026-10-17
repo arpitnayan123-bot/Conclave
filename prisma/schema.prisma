@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Startup idea application submitted by students (public form)
+model Application {
+  id           String   @id @default(cuid())
+  name         String
+  email        String
+  college      String
+  gradYear     String
+  linkedin     String?
+  ideaTitle    String
+  ideaPitch    String
+  stage        String   @default("IDEA") // IDEA | PROTOTYPE | MVP | LAUNCHED
+  skills       String   // comma separated
+  lookingFor   String   // comma separated: Co-founder (Tech), Co-founder (Business), Early member, Mentor
+  status       String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  reviewNote   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  invite       Invite?
+}
+
+// One-time email login codes (Resend delivery). Additive — no existing model touched.
+model EmailOtp {
+  id         String    @id @default(cuid())
+  email      String
+  codeHash   String // scrypt hash of the 6-digit code — the code itself is never stored
+  purpose    String    @default("LOGIN") // LOGIN | SIGNUP
+  attempts   Int       @default(0) // wrong-code attempts against this code
+  expiresAt  DateTime
+  consumedAt DateTime?
+  lastSentAt DateTime  @default(now())
+  requestIp  String    @default("")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([email, purpose])
+}
+
+// Invitation token sent to a selected applicant's Gmail
+model Invite {
+  id            String    @id @default(cuid())
+  token         String    @unique
+  applicationId String    @unique
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  email         String
+  status        String    @default("SENT") // SENT | USED
+  createdAt     DateTime  @default(now())
+  usedAt        DateTime?
+  member        Member?
+}
+
+// An accepted member of the private network
+model Member {
+  id           String   @id @default(cuid())
+  inviteId     String   @unique
+  invite       Invite   @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  name         String
+  email        String   @unique
+  passwordHash String
+  college      String
+  gradYear     String
+  bio          String   @default("")
+  skills       String   @default("") // comma separated
+  roles        String   @default("Builder") // comma separated: Founder, Engineer, Designer, Product, Ops
+  availableFor String   @default("") // comma separated
+  notifPrefs   String   @default("{\"digest\":\"instant\",\"mutedIdeaIds\":[]}") // JSON: digest instant|daily|weekly|off + muted idea ids
+  createdAt    DateTime @default(now())
+  ideas        Idea[]
+  interests    Interest[]
+  comments     Comment[]
+  bookmarks    Bookmark[]
+  collections  Collection[]
+  sentRequests     Connection[] @relation("Requester")
+  receivedRequests Connection[] @relation("Addressee")
+}
+
+// A startup idea posted inside the private network
+model Idea {
+  id        String     @id @default(cuid())
+  authorId  String
+  author    Member     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  title     String
+  pitch     String
+  stage     String     @default("IDEA") // IDEA | PROTOTYPE | MVP | LAUNCHED
+  needs     String     @default("") // what they are looking for
+  tags      String     @default("") // comma separated
+  createdAt DateTime   @default(now())
+  interests Interest[]
+  comments  Comment[]
+  bookmarks Bookmark[]
+  collectionItems CollectionItem[]
+}
+
+// "I'm interested in building this" signal on an idea
+model Interest {
+  id        String   @id @default(cuid())
+  ideaId    String
+  idea      Idea     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  message   String   @default("")
+  createdAt DateTime @default(now())
+
+  @@unique([ideaId, memberId])
+}
+
+// Discussion comment on an idea
+model Comment {
+  id        String   @id @default(cuid())
+  ideaId    String
+  idea      Idea     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([ideaId, createdAt])
+}
+
+// "Save for later" bookmark on an idea
+model Bookmark {
+  id        String   @id @default(cuid())
+  ideaId    String
+  idea      Idea     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([ideaId, memberId])
+}
+
+// Named folder a member uses to organize their bookmarked ideas
+model Collection {
+  id        String           @id @default(cuid())
+  memberId  String
+  member    Member           @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime         @default(now())
+  items     CollectionItem[]
+
+  @@index([memberId, createdAt])
+}
+
+// Join table: which bookmarked idea sits in which collection
+model CollectionItem {
+  id           String     @id @default(cuid())
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  ideaId       String
+  idea         Idea       @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([collectionId, ideaId])
+  @@index([ideaId])
+}
+
+// Co-founder connection requests between members
+model Connection {
+  id          String   @id @default(cuid())
+  requesterId String
+  requester   Member   @relation("Requester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addresseeId String
+  addressee   Member   @relation("Addressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+  status      String   @default("PENDING") // PENDING | ACCEPTED | DECLINED
+  message     String   @default("")
+  createdAt   DateTime @default(now())
+
+  @@unique([requesterId, addresseeId])
+}
