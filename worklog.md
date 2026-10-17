@@ -684,3 +684,25 @@ Work Log:
 
 Stage Summary:
 - Automation continuity secured: job 464401 now drives the 15-minute QA + development loop. Any future agent should read worklog.md first and must preserve the six-chapter landing structure.
+
+---
+Task ID: 21
+Agent: main (orchestrator)
+Task: Permanent Git identity (Arpit Nayan) + publish entire codebase to github.com/arpitnayan123-bot/Conclave with 100+ granular commits
+
+Work Log:
+- Queried GitHub API with the user's PAT: account confirmed as `arpitnayan123-bot` (id 281837164, name "Arpit Nayan"); primary verified email discovered live from `/user/emails` — NOT invented. Repo Conclave confirmed public with one existing web-created commit `605bb96` ("Initial commit", author Arpit Nayan).
+- Configured Git identity at GLOBAL level: user.name="Arpit Nayan", user.email=<GitHub primary email>. Verified local repo has NO user.name/user.email overrides, so effective identity in this repo = global identity.
+- Safety audit before publishing to a PUBLIC repo: extended .gitignore (*.db, .screens/, tool-results/, .zscripts/, agent-ctx/); confirmed .env, dev logs, sqlite db, QA screenshots excluded; repo-wide secret scan (PAT pattern, API keys, private keys) = zero matches.
+- Local sandbox snapshot history (UUID-message commits authored by container identity, incl. tracked .env/.screens) preserved untouched on local branch `sandbox-snapshots-backup` (was 1345501) — deliberately NOT pushed: it would violate the "authored as me, not z user" requirement and leak artifacts to a public repo.
+- Re-pointed main onto the remote Initial commit (update-ref + reset --mixed, README.md restored) so the existing commit is preserved as the root, never rewritten.
+- Committed the entire codebase FILE-BY-FILE in dependency order (scaffold → prisma → lib → hooks → ui primitives → shared/landing/club/submit/join/admin/platform → app → api routes → assets → examples/tests → docs) via scripted loop with conventional-commit messages: 147 new commits, all authored "Arpit Nayan <email>". Added db/.gitkeep so fresh clones can regenerate sqlite via db:push.
+- Pushed via one-shot credential helper (token never stored in remote URL, config, or printed): 605bb96..7fca2ea main→main, upstream tracking set. Remote SHA verified == local SHA.
+- Final history: 148 commits, author distribution 148× "Arpit Nayan"; committer 147× Arpit Nayan + 1× GitHub (the preserved Initial commit).
+
+Stage Summary:
+- Repo live at https://github.com/arpitnayan123-bot/Conclave — 148 commits, 100% authored as Arpit Nayan, working tree clean.
+- Excluded from the public repo by design (regenerable/sensitive): .env, db/custom.db (bun run db:push + prisma/seed.ts recreates), .screens/, tool-results/, .zscripts/, node_modules/.next.
+- Local-only: branch `sandbox-snapshots-backup` keeps the pre-publish sandbox snapshot history for recovery.
+- SECURITY: the PAT was shared in chat plaintext — recommend the user rotate/revoke it after this push; it was used only ephemerally and is stored nowhere on disk.
+- Automation note: previous review cron 464296 had stopped (max_rounds_exceeded) and was already replaced by job 464401.
