@@ -706,3 +706,23 @@ Stage Summary:
 - Local-only: branch `sandbox-snapshots-backup` keeps the pre-publish sandbox snapshot history for recovery.
 - SECURITY: the PAT was shared in chat plaintext — recommend the user rotate/revoke it after this push; it was used only ephemerally and is stored nowhere on disk.
 - Automation note: previous review cron 464296 had stopped (max_rounds_exceeded) and was already replaced by job 464401.
+
+---
+Task ID: 22
+Agent: main (orchestrator)
+Task: Beautiful README for the public repo + screenshots + env hardening bugfix
+
+Work Log:
+- Captured 7 curated 1440x900 screenshots of the live app into docs/screenshots/ (hero, The Admission, The Table, Charter, Petition, The Room, Committee Console) via agent-browser.
+- BUG FOUND during capture: every auth API returned 500 "AUTH_SECRET is not set" - the sandbox .env had lost its AUTH_SECRET line while src/lib/auth.ts now hard-requires it (previous hardening round). Login was silently failing platform-wide. FIX: restored AUTH_SECRET (and ADMIN_PASSWORD, also env-required with no default) to .env, restarted dev server; spotlight 200, member login 200.
+- Added .env.example to the repo (AUTH_SECRET / ADMIN_PASSWORD / DATABASE_URL with comments) + .gitignore negation (!.env.example) so fresh clones bootstrap correctly.
+- Took Seat No. 1 through the REAL product flow (no fabricated data): POST petition -> admin login -> APPROVED -> invite minted -> signup -> member login, all 200. Seat 1 = Arpit Nayan, arpitnayan123@gmail.com, password conclave-seat-1. Landing stats now honestly show 1 seat held / 1 petition read / 1 invitation extended.
+- Recaptured The Room (logged in as Seat 1, honest founding-season empty state) and Committee Console (unlocked, 1 admitted / 1 invitation, pulse widgets live).
+- Rewrote README.md: centered og.png crest, obsidian/gold shield badges, The Club manifesto, 3x2 screenshot tour with captions, six-chapter table, Inside the Club (member/committee features), Built With table, Begin (clone + cp .env.example + db:push + dev + founding-season walkthrough), environment table, routes table, API surface, design-token table (oklch values), charter quote, authored footer.
+- Pushed: screenshots + README + .env.example commits (repo now 152 commits, all authored Arpit Nayan).
+
+Stage Summary:
+- Repo public face is now premium and complete: https://github.com/arpitnayan123-bot/Conclave
+- Fresh-clone experience fixed end-to-end (.env.example + db push + required-env documentation).
+- Sandbox credentials: member seat-1 arpitnayan123@gmail.com / conclave-seat-1; admin conclave-2025 (from .env, not code).
+- Note: previous demo creds (aarav demo1234) no longer exist - DB was empty (founding season); Seat 1 is now the canonical demo account.
