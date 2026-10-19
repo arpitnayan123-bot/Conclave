@@ -121,16 +121,37 @@ export async function GET(req: Request) {
   }
 
   for (const c of accepted) {
-    if (c.createdAt < since) continue;
+    // time the REQUEST was accepted — not when it was sent — otherwise an
+    // old-but-newly-accepted intro would never surface as unread
+    const at = c.acceptedAt ?? c.createdAt;
+    if (at < since) continue;
     events.push({
       id: `accepted-${c.id}`,
       kind: "accepted",
-      createdAt: c.createdAt.toISOString(),
+      createdAt: at.toISOString(),
       actor: c.addressee,
     });
   }
 
   events.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 
-  return json({ events: events.slice(0, 30) });
+  return json({
+    events: events.slice(0, 30),
+    // server-side read marker — the source of truth for the unread badge,
+    // shared across devices instead of a per-browser localStorage key
+    readAt: auth.lastNotifReadAt ? auth.lastNotifReadAt.toISOString() : null,
+  });
+}
+
+// Mark every notification currently on file as read ("Mark read" button).
+export async function PATCH(req: Request) {
+  const auth = await getAuthMember(req);
+  if (!auth) return jsonError("Unauthorized", 401);
+  const readAt = new Date();
+  await db.member.update({
+    where: { id: auth.id },
+    data: { lastNotifReadAt: readAt },
+    select: { id: true },
+  });
+  return json({ readAt: readAt.toISOString() });
 }

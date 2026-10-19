@@ -145,8 +145,11 @@ export default function LoginGate() {
             committee&apos;s link reached your Gmail.
           </p>
 
-          {/* mode switch — email code (default) / password */}
-          <div className="mt-5 grid grid-cols-2 gap-1 rounded-xl border border-border/60 bg-card/40 p-1" role="tablist" aria-label="Sign-in method">
+          {/* mode switch — email code (default) / password.
+              Plain buttons with aria-pressed: the two panes are NOT tabpanels
+              (one control can hide the other's inputs mid-flow), so tab
+              semantics would be wrong. */}
+          <div className="mt-5 grid grid-cols-2 gap-1 rounded-xl border border-border/60 bg-card/40 p-1">
             {(
               [
                 { key: "code", label: "Email code", icon: Mail },
@@ -156,8 +159,7 @@ export default function LoginGate() {
               <button
                 key={m.key}
                 type="button"
-                role="tab"
-                aria-selected={mode === m.key}
+                aria-pressed={mode === m.key}
                 onClick={() => {
                   setMode(m.key);
                   if (m.key === "code") setStage("email");

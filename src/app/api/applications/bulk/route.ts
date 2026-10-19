@@ -38,15 +38,6 @@ export async function POST(req: Request) {
   });
   if (targets.length === 0) return jsonError("No matching applications", 404);
 
-  // apply the decision
-  await db.application.updateMany({
-    where: { id: { in: targets.map((t) => t.id) } },
-    data: {
-      status: action,
-      ...(reviewNote !== undefined ? { reviewNote } : {}),
-    },
-  });
-
   // optionally mint invites for newly-approved applications that lack one
   const createdInvites: {
     id: string;
@@ -55,20 +46,32 @@ export async function POST(req: Request) {
     application: { name: string; ideaTitle: string };
   }[] = [];
 
-  if (action === "APPROVED" && createInvites) {
-    const needsInvite = targets.filter((t) => !t.invite);
-    for (const t of needsInvite) {
-      const invite = await db.invite.create({
-        data: { token: generateInviteToken(), applicationId: t.id, email: t.email, status: "SENT" },
-      });
-      createdInvites.push({
-        id: invite.id,
-        token: invite.token,
-        email: invite.email,
-        application: { name: t.name, ideaTitle: t.ideaTitle },
-      });
+  // one transaction: a mid-batch failure must not leave some applications
+  // approved while others stay pending, or half the invites minted
+  await db.$transaction(async (tx) => {
+    await tx.application.updateMany({
+      where: { id: { in: targets.map((t) => t.id) } },
+      data: {
+        status: action,
+        ...(reviewNote !== undefined ? { reviewNote } : {}),
+      },
+    });
+
+    if (action === "APPROVED" && createInvites) {
+      const needsInvite = targets.filter((t) => !t.invite);
+      for (const t of needsInvite) {
+        const invite = await tx.invite.create({
+          data: { token: generateInviteToken(), applicationId: t.id, email: t.email, status: "SENT" },
+        });
+        createdInvites.push({
+          id: invite.id,
+          token: invite.token,
+          email: invite.email,
+          application: { name: t.name, ideaTitle: t.ideaTitle },
+        });
+      }
     }
-  }
+  });
 
   const totalInvitesForBatch = await db.invite.count({
     where: { applicationId: { in: targets.map((t) => t.id) } },

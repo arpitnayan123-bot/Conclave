@@ -68,6 +68,12 @@ export const CAMPUSES = [
   "Ahmedabad University", "NMIMS Mumbai", "Other Campus",
 ];
 
+/**
+ * Graduation years, single source of truth — the petition form and the
+ * profile editor must offer the same window (current year onward).
+ */
+export const GRAD_YEARS = ["2026", "2027", "2028", "2029", "2030", "2031", "2032"];
+
 export const SKILL_OPTIONS = [
   "Web Development", "Mobile Development", "AI / ML", "Blockchain", "Hardware / IoT",
   "Product", "UI / UX Design", "Business Strategy", "Marketing", "Sales",

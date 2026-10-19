@@ -100,6 +100,7 @@ const AUTH_MEMBER_SELECT = {
   roles: true,
   availableFor: true,
   notifPrefs: true,
+  lastNotifReadAt: true,
   createdAt: true,
 } as const;
 

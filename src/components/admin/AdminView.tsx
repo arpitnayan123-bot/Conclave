@@ -780,7 +780,7 @@ function AdminDashboard({ token, onLogout }: { token: string; onLogout: () => vo
 
       {/* keyboard cheat sheet */}
       <Dialog open={showHelp} onOpenChange={setShowHelp}>
-        <DialogContent className="glass max-w-md">
+        <DialogContent aria-describedby={undefined} className="glass max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Keyboard className="w-5 h-5 text-primary" /> Review shortcuts
@@ -1069,7 +1069,7 @@ function NoteDialog({
 
   return (
     <Dialog open={!!app} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="glass max-w-md">
+      <DialogContent aria-describedby={undefined} className="glass max-w-md">
         <DialogHeader>
           <DialogTitle>{rejecting ? `Decline ${app?.name}'s petition` : `Review note — ${app?.name}`}</DialogTitle>
         </DialogHeader>
@@ -1213,7 +1213,7 @@ function InviteDialog({ app, onClose, onPreview }: { app: Application | null; on
 
   return (
     <Dialog open={!!app} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="glass max-w-lg">
+      <DialogContent aria-describedby={undefined} className="glass max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MailCheck className="w-5 h-5 text-primary" /> Extend an invitation to {app?.name}
@@ -1284,7 +1284,7 @@ function BulkInviteDialog({ result, onClose, onPreview }: { result: BulkResult |
 
   return (
     <Dialog open={!!result} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="glass max-w-lg max-h-[85vh] overflow-y-auto">
+      <DialogContent aria-describedby={undefined} className="glass max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MailCheck className="w-5 h-5 text-primary" />
@@ -1374,7 +1374,7 @@ function EmailPreviewDialog({ preview, onClose }: { preview: EmailPreview | null
 
   return (
     <Dialog open={!!preview} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="glass max-w-xl max-h-[88vh] overflow-y-auto nice-scroll">
+      <DialogContent aria-describedby={undefined} className="glass max-w-xl max-h-[88vh] overflow-y-auto nice-scroll">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MailOpen className="w-5 h-5 text-primary" />

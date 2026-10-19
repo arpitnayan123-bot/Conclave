@@ -42,7 +42,10 @@ export async function GET(req: Request) {
 
   return json({
     members: members.map((m) => ({
-      id: m.id, name: m.name, email: m.email, college: m.college, gradYear: m.gradYear,
+      id: m.id, name: m.name, college: m.college, gradYear: m.gradYear,
+      // email stays private unless we're already introduced (ACCEPTED) —
+      // the profile card remains the contact surface for pending requests
+      email: connMap[m.id] === "ACCEPTED" ? m.email : null,
       bio: m.bio, skills: m.skills, roles: m.roles, availableFor: m.availableFor,
       ideaCount: m._count.ideas,
       ideaTitles: m.ideas.map((i) => ({ id: i.id, title: i.title, stage: i.stage })),

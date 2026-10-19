@@ -7,12 +7,19 @@ const IDEA_STAGES = ["IDEA", "PROTOTYPE", "MVP", "LAUNCHED"];
 const P2002 = (e: unknown) =>
   e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002";
 
-// Idea feed (private network)
+// Idea feed (private network) — windowed: ?limit (max 100, default 50) + ?offset.
+// The Room stays fast as the ledger grows; clients page with hasMore.
 export async function GET(req: Request) {
   const auth = await getAuthMember(req);
   if (!auth) return jsonError("Unauthorized", 401);
 
-  const [ideas, myBookmarks] = await Promise.all([
+  const url = new URL(req.url);
+  const parsedLimit = Number.parseInt(url.searchParams.get("limit") ?? "", 10);
+  const parsedOffset = Number.parseInt(url.searchParams.get("offset") ?? "", 10);
+  const limit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), 100) : 50;
+  const offset = Number.isFinite(parsedOffset) ? Math.max(parsedOffset, 0) : 0;
+
+  const [ideas, myBookmarks, total] = await Promise.all([
     db.idea.findMany({
       include: {
         author: {
@@ -25,8 +32,11 @@ export async function GET(req: Request) {
         _count: { select: { comments: true } },
       },
       orderBy: { createdAt: "desc" },
+      take: limit,
+      skip: offset,
     }),
     db.bookmark.findMany({ where: { memberId: auth.id }, select: { ideaId: true } }),
+    db.idea.count(),
   ]);
   const bookmarked = new Set(myBookmarks.map((b) => b.ideaId));
   return json({
@@ -36,6 +46,8 @@ export async function GET(req: Request) {
       bookmarked: bookmarked.has(idea.id),
     })),
     meId: auth.id,
+    total,
+    hasMore: offset + ideas.length < total,
   });
 }
 

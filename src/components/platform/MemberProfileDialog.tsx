@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Avatar } from "@/components/shared/Avatar";
+import ConnectDialog from "@/components/platform/ConnectDialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -76,6 +77,8 @@ export default function MemberProfileDialog({ memberId, onClose, onConnected }: 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
+  // the "Request introduction" button now opens the shared note dialog
+  const [connectOpen, setConnectOpen] = useState(false);
 
   useEffect(() => {
     if (!memberId) {
@@ -102,27 +105,20 @@ export default function MemberProfileDialog({ memberId, onClose, onConnected }: 
     };
   }, [memberId]);
 
-  async function connect() {
+  function connect() {
     if (!data) return;
-    setConnecting(true);
-    try {
-      const res = await api<{ matched?: boolean; connection?: { id: string } }>("/connections", {
-        body: { addresseeId: data.member.id },
-      });
-      const status = res.matched ? "ACCEPTED" : "PENDING_OUT";
-      setData({
-        ...data,
-        connectionStatus: status,
-        connectionId: res.connection?.id ?? data.connectionId,
-      });
-      onConnected?.(data.member.id, status);
-      if (res.matched) toast.success("Introduced — you're now connected");
-      else toast.success("Introduction requested");
-    } catch (err) {
-      toast.error((err as Error).message);
-    } finally {
-      setConnecting(false);
-    }
+    setConnectOpen(true);
+  }
+
+  async function applyConnectResult(result: { matched?: boolean; connectionId?: string }) {
+    if (!data) return;
+    const status = result.matched ? "ACCEPTED" : "PENDING_OUT";
+    setData({
+      ...data,
+      connectionStatus: status,
+      connectionId: result.connectionId ?? data.connectionId,
+    });
+    onConnected?.(data.member.id, status);
   }
 
   async function accept() {
@@ -151,6 +147,14 @@ export default function MemberProfileDialog({ memberId, onClose, onConnected }: 
       }}
     >
       <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto" onInteractOutside={(e) => e.preventDefault()}>
+        {/* always-present accessible title/description: the first render
+            happens before the profile fetch resolves, when no header exists
+            yet — this keeps Radix's a11y checks quiet in that window */}
+        <DialogTitle className="sr-only">{data?.member.name ? `${data.member.name} — profile` : "Member profile"}</DialogTitle>
+        <DialogDescription className="sr-only">
+          Bio, skills and ventures for this member of the circle.
+        </DialogDescription>
+
         {loading ? <ProfileSkeleton /> : null}
 
         {!loading && error ? (
@@ -309,6 +313,15 @@ export default function MemberProfileDialog({ memberId, onClose, onConnected }: 
           </>
         ) : null}
       </DialogContent>
+
+      {/* introduction request (with optional note) — stacks over the profile.
+          member is null unless the user actually asked for it, otherwise the
+          dialog would pop open the moment profile data arrives. */}
+      <ConnectDialog
+        member={connectOpen && data ? { id: data.member.id, name: data.member.name, college: data.member.college } : null}
+        onClose={() => setConnectOpen(false)}
+        onDone={applyConnectResult}
+      />
     </Dialog>
   );
 }

@@ -41,6 +41,11 @@ export function rateLimit(key: string, limit: number, windowMs: number): boolean
 /** Best-effort client IP from proxy headers (Caddy in front of Next). */
 export function clientIp(req: Request): string {
   const fwd = req.headers.get("x-forwarded-for");
-  if (fwd) return fwd.split(",")[0].trim();
+  if (fwd) {
+    // Trust only the LAST hop — the value our own proxy appended. Earlier
+    // entries come from the client and can be spoofed with a forged header.
+    const hops = fwd.split(",").map((h) => h.trim()).filter(Boolean);
+    if (hops.length > 0) return hops[hops.length - 1];
+  }
   return req.headers.get("x-real-ip") ?? "local";
 }

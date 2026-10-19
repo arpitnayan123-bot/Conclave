@@ -6,6 +6,17 @@ import { db } from "@/lib/db";
  * + idea titles only. Never emails, handles, or private messages.
  */
 export async function GET() {
+  try {
+    return await buildPulse();
+  } catch (e) {
+    // a pulse outage must never take the landing page down — serve an empty
+    // ticker and log loudly instead of throwing a 500 at first paint
+    console.error("[pulse] failed to build the network pulse", e);
+    return json({ pulse: [] });
+  }
+}
+
+async function buildPulse() {
   const since = new Date(Date.now() - 30 * 24 * 3_600_000); // 30-day window
 
   const [ideas, interests, comments, connections, joinedInvites] = await Promise.all([
@@ -120,7 +131,10 @@ function first(name: string) {
 
 /** "Manipal Institute of Technology" → "Manipal Institute" — keeps the ticker tight */
 function short(college: string) {
-  return college.length > 14 ? college.slice(0, college.lastIndexOf(" ", 14)) : college;
+  if (college.length <= 14) return college;
+  const cut = college.lastIndexOf(" ", 14);
+  // no space to cut on (single long word) — truncate instead of dropping the last char
+  return cut > 0 ? college.slice(0, cut) : `${college.slice(0, 13)}…`;
 }
 
 function agoLabel(iso: string): string {

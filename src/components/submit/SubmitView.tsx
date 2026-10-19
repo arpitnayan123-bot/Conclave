@@ -19,10 +19,8 @@ import { Logo } from "@/components/shared/Logo";
 import { Footer } from "@/components/shared/Footer";
 import { Reveal } from "@/components/shared/Reveal";
 import { StatusChecker } from "./StatusChecker";
-import { CAMPUSES, SKILL_OPTIONS, LOOKING_FOR_OPTIONS, IDEA_STAGES } from "@/lib/store";
+import { CAMPUSES, SKILL_OPTIONS, LOOKING_FOR_OPTIONS, IDEA_STAGES, GRAD_YEARS } from "@/lib/store";
 import { api } from "@/lib/api";
-
-const GRAD_YEARS = ["2025", "2026", "2027", "2028", "2029", "2030", "2031"];
 
 const STAGE_COPY: Record<string, string> = {
   IDEA: "Just an idea",

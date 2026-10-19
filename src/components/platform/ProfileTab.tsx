@@ -17,6 +17,7 @@ import { api } from "@/lib/api";
 import {
   DIGEST_LABELS,
   SKILL_OPTIONS,
+  GRAD_YEARS,
   parseNotifPrefs,
   useMemberStore,
   type Me,
@@ -45,7 +46,6 @@ const AVAILABILITY_OPTIONS = [
   "Weekends",
   "Remote-friendly",
 ];
-const GRAD_YEARS = ["2024", "2025", "2026", "2027", "2028", "2029", "2030", "2031"];
 const DIGEST_ORDER: NotifPrefs["digest"][] = ["instant", "daily", "weekly", "off"];
 
 /** one of the member's own ideas (for the per-idea mute manager) */

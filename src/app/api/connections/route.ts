@@ -61,7 +61,7 @@ export async function POST(req: Request) {
     if (existing.status === "DECLINED") {
       const updated = await db.connection.update({
         where: { id: existing.id },
-        data: { status: "PENDING", message },
+        data: { status: "PENDING", message, acceptedAt: null },
       });
       return json({ connection: updated });
     }
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
     if (reverse.status === "PENDING") {
       const updated = await db.connection.update({
         where: { id: reverse.id },
-        data: { status: "ACCEPTED" },
+        data: { status: "ACCEPTED", acceptedAt: new Date() },
       });
       return json({ connection: updated, matched: true });
     }

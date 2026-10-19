@@ -40,12 +40,16 @@ export type CommentRow = {
 export type IdeasPayload = {
   ideas: Idea[];
   meId: string;
+  /** windowed feed — present when the API paginates */
+  total?: number;
+  hasMore?: boolean;
 };
 
 export type DirectoryMember = {
   id: string;
   name: string;
-  email: string;
+  // null unless already introduced (ACCEPTED) — the API keeps it private otherwise
+  email: string | null;
   college: string;
   gradYear: string;
   bio: string;

@@ -113,6 +113,18 @@ export async function POST(req: Request) {
       },
     });
 
+    // opportunistic housekeeping — expired or already-consumed codes have no
+    // value; sweep a bounded batch so the table can't grow without end
+    try {
+      await db.emailOtp.deleteMany({
+        where: {
+          OR: [{ expiresAt: { lt: new Date(now) } }, { consumedAt: { not: null } }],
+        },
+      });
+    } catch (sweepErr) {
+      console.warn("[otp] sweep failed (non-fatal)", sweepErr);
+    }
+
     // ── deliver via Resend ───────────────────────────────────────────────
     const minutes = Math.round(CODE_TTL_MS / 60_000);
     const mail = otpMail(code, minutes);

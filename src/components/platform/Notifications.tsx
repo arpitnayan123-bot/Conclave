@@ -21,15 +21,6 @@ type NotificationEvent = {
   message?: string;
 };
 
-const READ_KEY = "conclave-notif-read";
-
-function readTimestamp(): number {
-  if (typeof window === "undefined") return 0;
-  const v = window.localStorage.getItem(READ_KEY);
-  const t = v ? new Date(v).getTime() : 0;
-  return Number.isNaN(t) ? 0 : t;
-}
-
 export default function Notifications({
   onNavigate,
 }: {
@@ -37,13 +28,17 @@ export default function Notifications({
 }) {
   const [events, setEvents] = useState<NotificationEvent[] | null>(null);
   const [open, setOpen] = useState(false);
-  // localStorage read — safe lazily: this component only mounts client-side post-login
-  const [readTs, setReadTs] = useState(() => readTimestamp());
+  // server-side read marker — null until the first /notifications load lands
+  // (unknown ⇒ badge suppressed, so nothing flashes as unread)
+  const [readTs, setReadTs] = useState<number | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const load = useCallback(() => {
-    api<{ events: NotificationEvent[] }>("/notifications")
-      .then((r) => setEvents(r.events))
+    api<{ events: NotificationEvent[]; readAt: string | null }>("/notifications")
+      .then((r) => {
+        setEvents(r.events);
+        setReadTs(r.readAt ? new Date(r.readAt).getTime() || 0 : 0);
+      })
       .catch(() => {
         /* notifications are non-critical — stay silent */
       });
@@ -57,14 +52,18 @@ export default function Notifications({
     };
   }, [load]);
 
-  const unreadCount = (events ?? []).filter(
-    (e) => new Date(e.createdAt).getTime() > readTs
-  ).length;
+  const unreadCount =
+    readTs === null
+      ? 0 // marker not synced yet — don't flash a false unread badge
+      : (events ?? []).filter((e) => new Date(e.createdAt).getTime() > readTs).length;
 
   function markAllRead() {
-    const now = new Date().toISOString();
-    window.localStorage.setItem(READ_KEY, now);
-    setReadTs(new Date(now).getTime());
+    if (readTs === null) return; // nothing synced to mark against yet
+    setReadTs(new Date().getTime()); // optimistic — clear the badge immediately
+    // persist server-side so the marker follows the member across devices
+    void api<{ readAt: string }>("/notifications", { method: "PATCH" }).catch(() => {
+      /* non-fatal — the tray re-syncs on next load */
+    });
   }
 
   function openAndMark() {

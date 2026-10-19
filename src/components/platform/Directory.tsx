@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Avatar } from "@/components/shared/Avatar";
+import ConnectDialog, { type ConnectTarget } from "@/components/platform/ConnectDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -49,6 +50,7 @@ export default function Directory() {
   const [availableOnly, setAvailableOnly] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
+  const [connectTarget, setConnectTarget] = useState<ConnectTarget>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -113,25 +115,19 @@ export default function Directory() {
     [members]
   );
 
-  async function connect(m: DirectoryMember) {
-    setBusyId(m.id);
-    try {
-      const res = await api<{ matched?: boolean; connection?: { id: string } }>("/connections", {
-        body: { addresseeId: m.id },
-      });
-      const status = res.matched ? "ACCEPTED" : "PENDING_OUT";
-      setMembers((prev) =>
-        prev.map((x) =>
-          x.id === m.id ? { ...x, connectionStatus: status, connectionId: res.connection?.id ?? x.connectionId } : x
-        )
-      );
-      if (res.matched) toast.success("Introduced — you're now connected");
-      else toast.success("Introduction requested");
-    } catch (err) {
-      toast.error((err as Error).message);
-    } finally {
-      setBusyId(null);
-    }
+  // note travels with the request via the shared confirmation dialog
+  function applyConnectResult(
+    m: { id: string },
+    result: { matched?: boolean; connectionId?: string }
+  ) {
+    const status = result.matched ? "ACCEPTED" : "PENDING_OUT";
+    setMembers((prev) =>
+      prev.map((x) =>
+        x.id === m.id
+          ? { ...x, connectionStatus: status, connectionId: result.connectionId ?? x.connectionId }
+          : x
+      )
+    );
   }
 
   async function accept(m: DirectoryMember) {
@@ -304,7 +300,7 @@ export default function Directory() {
               <MemberCard
                 member={m}
                 busy={busyId === m.id}
-                onConnect={() => connect(m)}
+                onConnect={() => setConnectTarget({ id: m.id, name: m.name, college: m.college })}
                 onAccept={() => accept(m)}
                 onViewProfile={() => setProfileId(m.id)}
               />
@@ -320,6 +316,15 @@ export default function Directory() {
         onConnected={(id, status) =>
           setMembers((prev) => prev.map((x) => (x.id === id ? { ...x, connectionStatus: status } : x)))
         }
+      />
+
+      {/* introduction request (with optional note) */}
+      <ConnectDialog
+        member={connectTarget}
+        onClose={() => setConnectTarget(null)}
+        onDone={(result) => {
+          if (connectTarget) applyConnectResult(connectTarget, result);
+        }}
       />
     </section>
   );

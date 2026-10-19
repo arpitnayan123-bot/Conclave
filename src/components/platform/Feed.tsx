@@ -7,6 +7,7 @@ import {
   ArrowDownWideNarrow,
   Bookmark,
   Flame,
+  History,
   Link2,
   Loader2,
   MessageSquare,
@@ -125,6 +126,11 @@ type FeedProps = {
   onBookmarked?: (ideaId: string, bookmarked: boolean) => void;
   /** Saved view: render only bookmarked ideas with a tailored header/empty state */
   savedOnly?: boolean;
+  /** windowed-feed affordances (The Room only) */
+  hasMore?: boolean;
+  loadingMore?: boolean;
+  totalIdeas?: number;
+  onLoadMore?: () => void;
 };
 
 type SortKey = "newest" | "active" | "discussed";
@@ -153,6 +159,10 @@ export default function Feed({
   onIdeaOpened,
   onBookmarked,
   savedOnly = false,
+  hasMore = false,
+  loadingMore = false,
+  totalIdeas = 0,
+  onLoadMore,
 }: FeedProps) {
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState<string>("ALL");
@@ -505,6 +515,24 @@ export default function Feed({
         </motion.div>
       )}
 
+      {/* windowed ledger — fetch the next page of proceedings */}
+      {!savedOnly && hasMore ? (
+        <div className="flex flex-col items-center gap-1.5 pt-2">
+          <Button
+            variant="outline"
+            onClick={onLoadMore}
+            disabled={loadingMore}
+            className="min-h-[44px] rounded-full px-6"
+          >
+            {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <History aria-hidden />}
+            {loadingMore ? "Fetching the earlier proceedings…" : "Summon earlier proceedings"}
+          </Button>
+          <p className="text-[11px] text-muted-foreground/70">
+            Showing {filtered.length} of {totalIdeas} ventures in the room
+          </p>
+        </div>
+      ) : null}
+
       {/* post idea dialog */}
       <Dialog open={postOpen} onOpenChange={onPostOpenChange}>
         <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto" onInteractOutside={(e) => e.preventDefault()}>
@@ -772,17 +800,7 @@ function IdeaCard({
 
   return (
     <article
-      role="button"
-      tabIndex={0}
-      onClick={onOpen}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onOpen();
-        }
-      }}
-      aria-label={`Open details for ${idea.title}`}
-      className="card-beam card-hover group flex h-full cursor-pointer flex-col rounded-xl border border-border/60 bg-card/60 p-5 focus-visible:outline-2 focus-visible:outline-primary/60"
+      className="card-beam card-hover group relative flex h-full flex-col rounded-xl border border-border/60 bg-card/60 p-5 focus-within:outline-2 focus-within:outline-primary/60"
     >
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
@@ -800,7 +818,16 @@ function IdeaCard({
       </div>
 
       <h3 className="font-display text-lg font-bold leading-snug transition-colors group-hover:text-primary">
-        {idea.title}
+        {/* stretched overlay: a real button (valid nesting, keyboard-operable)
+            whose ::after covers the card, so the whole surface opens the details */}
+        <button
+          type="button"
+          onClick={onOpen}
+          className="text-left after:absolute after:inset-0 after:rounded-xl after:content-['']"
+          aria-label={`Open details for ${idea.title}`}
+        >
+          {idea.title}
+        </button>
       </h3>
       <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
         {idea.pitch}
@@ -827,7 +854,7 @@ function IdeaCard({
         </div>
       ) : null}
 
-      <div className="mt-auto border-t border-border/60 pt-4">
+      <div className="relative z-10 mt-auto border-t border-border/60 pt-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <button
             type="button"

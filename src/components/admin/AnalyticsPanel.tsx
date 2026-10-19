@@ -34,7 +34,7 @@ import { cn } from "@/lib/utils";
 /* theme-hex approximations of the club palette (see globals.css tokens) */
 const EMERALD = "#34d399";
 const EMERALD_DIM = "#10b981";
-const GOLD = "#fbbf24";
+const GOLD = "#f1c45e"; // ≈ --gold oklch(0.84 0.13 85) — was amber-400, drifted from the token
 const AMBER = "#f59e0b";
 const RED = "#f87171";
 const GRID = "rgba(255,255,255,0.06)";

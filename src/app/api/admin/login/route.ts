@@ -1,3 +1,4 @@
+import { timingSafeEqual, createHash } from "crypto";
 import { json, jsonError, signToken, verifyToken } from "@/lib/auth";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 
@@ -19,7 +20,11 @@ export async function POST(req: Request) {
     return jsonError("Too many attempts. Try again in a few minutes.", 429);
 
   const { password } = (await req.json()) as { password?: string };
-  if (!password || password !== ADMIN_PASSWORD)
+  // compare through SHA-256 digests so the comparison is constant-time and
+  // length differences can't leak anything about the real password
+  const given = createHash("sha256").update(password ?? "").digest();
+  const expected = createHash("sha256").update(ADMIN_PASSWORD).digest();
+  if (!timingSafeEqual(given, expected))
     return jsonError("Incorrect admin password", 401);
 
   const token = signToken({ sub: "admin", role: "admin" }, 1000 * 60 * 60 * 12);

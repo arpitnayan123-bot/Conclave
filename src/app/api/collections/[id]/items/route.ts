@@ -25,8 +25,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   const ideaId = typeof body.ideaId === "string" ? body.ideaId : "";
-  const action = body.action === "remove" ? "remove" : "add";
   if (!ideaId) return jsonError("ideaId is required", 400);
+  // an unknown action used to silently mean "add" — refuse it so a typo'd
+  // client can't mutate folders by accident
+  if (body.action !== "add" && body.action !== "remove")
+    return jsonError("action must be \"add\" or \"remove\"", 400);
+  const action: "add" | "remove" = body.action;
 
   const idea = await db.idea.findUnique({ where: { id: ideaId }, select: { id: true } });
   if (!idea) return jsonError("Idea not found", 404);

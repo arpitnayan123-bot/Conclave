@@ -82,11 +82,15 @@ export default function CommandPalette({
     [onOpenChange]
   );
 
-  // global ⌘K / Ctrl+K toggle
+  // global ⌘K / Ctrl+K toggle — suppressed while a modal dialog is open so
+  // the palette never stacks on top of the post/detail/manager dialogs
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
+        const dialogOpen =
+          typeof document !== "undefined" && document.querySelector('[role="dialog"]');
+        if (dialogOpen && !open) return;
         setOpenState(!open);
       }
     };

@@ -20,7 +20,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (connection.addresseeId !== auth.id) return jsonError("Not your request to answer", 403);
   if (connection.status !== "PENDING") return jsonError("This request was already handled", 409);
 
-  const updated = await db.connection.update({ where: { id }, data: { status } });
+  const updated = await db.connection.update({
+    where: { id },
+    data: { status, ...(status === "ACCEPTED" ? { acceptedAt: new Date() } : {}) },
+  });
   return json({ connection: updated });
 }
 

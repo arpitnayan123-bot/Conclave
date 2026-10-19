@@ -43,6 +43,9 @@ const TABS: { key: TabKey; label: string; short?: string; icon: LucideIcon }[] =
   { key: "profile", label: "Profile", icon: CircleUserRound },
 ];
 
+/** window size for the room feed (server caps at 100) */
+const IDEAS_PAGE = 50;
+
 export default function PlatformView({ initialIdeaId }: { initialIdeaId?: string | null }) {
   const token = useMemberStore((s) => s.token);
   const member = useMemberStore((s) => s.member);
@@ -68,6 +71,10 @@ export default function PlatformView({ initialIdeaId }: { initialIdeaId?: string
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [meId, setMeId] = useState("");
   const [ideasLoading, setIdeasLoading] = useState(true);
+  // windowed feed state — The Room pages instead of loading the whole ledger
+  const [hasMoreIdeas, setHasMoreIdeas] = useState(false);
+  const [totalIdeas, setTotalIdeas] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   const initialIdeasTokenRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -101,15 +108,36 @@ export default function PlatformView({ initialIdeaId }: { initialIdeaId?: string
   const loadIdeas = useCallback(async (silent = false) => {
     if (!silent) setIdeasLoading(true);
     try {
-      const data = await api<IdeasPayload>("/ideas");
+      const data = await api<IdeasPayload>(`/ideas?limit=${IDEAS_PAGE}&offset=0`);
       setIdeas(data.ideas);
       setMeId(data.meId);
+      setHasMoreIdeas(Boolean(data.hasMore));
+      setTotalIdeas(data.total ?? data.ideas.length);
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
       if (!silent) setIdeasLoading(false);
     }
   }, []);
+
+  // "Summon earlier proceedings" — append the next window of the ledger
+  const loadMoreIdeas = useCallback(async () => {
+    if (loadingMore || !hasMoreIdeas) return;
+    setLoadingMore(true);
+    try {
+      const data = await api<IdeasPayload>(`/ideas?limit=${IDEAS_PAGE}&offset=${ideas.length}`);
+      setIdeas((prev) => {
+        const seen = new Set(prev.map((p) => p.id));
+        return [...prev, ...data.ideas.filter((n) => !seen.has(n.id))];
+      });
+      setHasMoreIdeas(Boolean(data.hasMore));
+      setTotalIdeas(data.total ?? totalIdeas);
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [ideas.length, loadingMore, hasMoreIdeas, totalIdeas]);
 
   // shared permalink (#/platform?idea=ID): open that idea's detail dialog once ideas are around
   useEffect(() => {
@@ -378,6 +406,10 @@ export default function PlatformView({ initialIdeaId }: { initialIdeaId?: string
               openIdeaId={focusIdeaId}
               onIdeaOpened={clearFocusIdea}
               onBookmarked={setBookmarked}
+              hasMore={hasMoreIdeas}
+              loadingMore={loadingMore}
+              totalIdeas={totalIdeas}
+              onLoadMore={loadMoreIdeas}
             />
           ) : null}
           {tab === "saved" ? (
