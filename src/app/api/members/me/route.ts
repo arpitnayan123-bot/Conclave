@@ -30,17 +30,32 @@ export function sanitizeNotifPrefs(raw: unknown): string | null {
 export async function GET(req: Request) {
   const member = await getAuthMember(req);
   if (!member) return jsonError("Unauthorized", 401);
-  const { passwordHash: _ph, ...safe } = member;
-  return json({ member: safe });
+  // getAuthMember already returns a flat, hash-free own-row — safe to return as-is.
+  return json({ member });
 }
 
 export async function PATCH(req: Request) {
   const auth = await getAuthMember(req);
   if (!auth) return jsonError("Unauthorized", 401);
-  const body = (await req.json()) as {
+  const body = (await req.json().catch(() => null)) as {
     name?: string; bio?: string; skills?: string; roles?: string; availableFor?: string; gradYear?: string;
     notifPrefs?: unknown;
-  };
+  } | null;
+  if (!body) return jsonError("Invalid JSON body", 400);
+
+  // length caps — the profile is rendered on cards and the directory
+  const CAPS: Array<[keyof typeof body, number]> = [
+    ["name", 80], ["bio", 600], ["skills", 300], ["roles", 200], ["availableFor", 300],
+  ];
+  for (const [key, cap] of CAPS) {
+    const value = body[key];
+    if (typeof value === "string" && value.length > cap) {
+      return jsonError(`“${key}” is too long — ${cap} characters max`, 400);
+    }
+    if (value !== undefined && typeof value !== "string") {
+      return jsonError(`“${key}” must be text`, 400);
+    }
+  }
 
   const prefs = sanitizeNotifPrefs(body.notifPrefs);
   if (body.notifPrefs !== undefined && prefs === null) {

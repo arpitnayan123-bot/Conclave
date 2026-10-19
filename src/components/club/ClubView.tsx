@@ -241,7 +241,7 @@ export default function ClubView() {
               asChild
               className="hidden sm:inline-flex min-h-[44px] font-semibold cta-shine"
             >
-              <a href="#/submit">Request membership</a>
+              <a href="#/submit">Petition for membership</a>
             </Button>
           </div>
         </div>
@@ -511,7 +511,7 @@ export default function ClubView() {
                     className="mt-6 glow-emerald cta-shine h-11 font-semibold group"
                   >
                     <a href="#/submit">
-                      Request membership
+                      Petition for membership
                       <Send
                         className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
                         aria-hidden="true"
@@ -625,7 +625,7 @@ export default function ClubView() {
                     size="lg"
                     className="glow-emerald cta-shine h-12 px-8 text-base font-semibold min-w-[210px]"
                   >
-                    <a href="#/submit">Request membership</a>
+                    <a href="#/submit">Petition for membership</a>
                   </Button>
                   <Button
                     asChild

@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getAuthMember, json, jsonError } from "@/lib/auth";
 
@@ -26,6 +27,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return json({ bookmarked: false });
   }
 
-  await db.bookmark.create({ data: { ideaId: id, memberId: auth.id } });
+  try {
+    await db.bookmark.create({ data: { ideaId: id, memberId: auth.id } });
+  } catch (e) {
+    // double-click race: already saved — treat as bookmarked
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      return json({ bookmarked: true });
+    }
+    throw e;
+  }
   return json({ bookmarked: true });
 }

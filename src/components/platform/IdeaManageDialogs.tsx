@@ -135,7 +135,7 @@ function EditIdeaDialog({
         if (!o) onClose();
       }}
     >
-      <DialogContent className="sm:max-w-lg" onInteractOutside={(e) => e.preventDefault()}>
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="font-display">Refine your venture</DialogTitle>
           <DialogDescription>
@@ -159,8 +159,13 @@ function EditIdeaDialog({
               value={form.pitch}
               onChange={(e) => setForm((f) => ({ ...f, pitch: e.target.value }))}
               className="min-h-28"
+              maxLength={4000}
             />
-            <p className="text-xs text-muted-foreground">{form.pitch.trim().length}/40 min characters</p>
+            <p className="text-xs text-muted-foreground">
+              {form.pitch.trim().length < 40
+                ? `${form.pitch.trim().length}/40 min characters`
+                : `${form.pitch.length} characters · 4000 max`}
+            </p>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">

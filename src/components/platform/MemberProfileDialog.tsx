@@ -8,6 +8,7 @@ import {
   Clock,
   Flame,
   GraduationCap,
+  Handshake,
   Lightbulb,
   Loader2,
   MessageSquare,
@@ -55,6 +56,7 @@ type ProfilePayload = {
   };
   ideas: ProfileIdea[];
   connectionStatus: string | null;
+  connectionId: string | null;
   isMe: boolean;
 };
 
@@ -62,7 +64,7 @@ type Props = {
   memberId: string | null;
   onClose: () => void;
   /** notify the parent list so connect-state stays in sync */
-  onConnected?: (memberId: string, status: "PENDING" | "ACCEPTED") => void;
+  onConnected?: (memberId: string, status: "PENDING_OUT" | "ACCEPTED") => void;
 };
 
 /**
@@ -104,14 +106,36 @@ export default function MemberProfileDialog({ memberId, onClose, onConnected }: 
     if (!data) return;
     setConnecting(true);
     try {
-      const res = await api<{ matched?: boolean }>("/connections", {
+      const res = await api<{ matched?: boolean; connection?: { id: string } }>("/connections", {
         body: { addresseeId: data.member.id },
       });
-      const status = res.matched ? "ACCEPTED" : "PENDING";
-      setData({ ...data, connectionStatus: status });
+      const status = res.matched ? "ACCEPTED" : "PENDING_OUT";
+      setData({
+        ...data,
+        connectionStatus: status,
+        connectionId: res.connection?.id ?? data.connectionId,
+      });
       onConnected?.(data.member.id, status);
       if (res.matched) toast.success("Introduced — you're now connected");
       else toast.success("Introduction requested");
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  async function accept() {
+    if (!data?.connectionId) return;
+    setConnecting(true);
+    try {
+      await api(`/connections/${data.connectionId}`, {
+        method: "PATCH",
+        body: { status: "ACCEPTED" },
+      });
+      setData({ ...data, connectionStatus: "ACCEPTED" });
+      onConnected?.(data.member.id, "ACCEPTED");
+      toast.success("Introduced — you're now connected");
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -257,7 +281,16 @@ export default function MemberProfileDialog({ memberId, onClose, onConnected }: 
                   <Button variant="outline" size="sm" disabled>
                     <Check className="text-emeraldx" aria-hidden /> Introduced
                   </Button>
-                ) : data.connectionStatus === "PENDING" ? (
+                ) : data.connectionStatus === "PENDING_IN" ? (
+                  <Button size="sm" onClick={() => void accept()} disabled={connecting}>
+                    {connecting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                    ) : (
+                      <Handshake aria-hidden />
+                    )}
+                    Accept introduction
+                  </Button>
+                ) : data.connectionStatus === "PENDING_OUT" ? (
                   <Button variant="secondary" size="sm" disabled>
                     <Clock aria-hidden /> Requested
                   </Button>

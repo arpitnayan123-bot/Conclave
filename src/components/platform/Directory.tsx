@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   Check,
   Clock,
+  Handshake,
   Lightbulb,
   MapPin,
   Search,
@@ -115,15 +116,36 @@ export default function Directory() {
   async function connect(m: DirectoryMember) {
     setBusyId(m.id);
     try {
-      const res = await api<{ matched?: boolean }>("/connections", {
+      const res = await api<{ matched?: boolean; connection?: { id: string } }>("/connections", {
         body: { addresseeId: m.id },
       });
-      const status = res.matched ? "ACCEPTED" : "PENDING";
+      const status = res.matched ? "ACCEPTED" : "PENDING_OUT";
       setMembers((prev) =>
-        prev.map((x) => (x.id === m.id ? { ...x, connectionStatus: status } : x))
+        prev.map((x) =>
+          x.id === m.id ? { ...x, connectionStatus: status, connectionId: res.connection?.id ?? x.connectionId } : x
+        )
       );
       if (res.matched) toast.success("Introduced — you're now connected");
       else toast.success("Introduction requested");
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function accept(m: DirectoryMember) {
+    if (!m.connectionId) return;
+    setBusyId(m.id);
+    try {
+      await api(`/connections/${m.connectionId}`, {
+        method: "PATCH",
+        body: { status: "ACCEPTED" },
+      });
+      setMembers((prev) =>
+        prev.map((x) => (x.id === m.id ? { ...x, connectionStatus: "ACCEPTED" } : x))
+      );
+      toast.success(`Introduced — welcome ${m.name} to your circle`);
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -283,6 +305,7 @@ export default function Directory() {
                 member={m}
                 busy={busyId === m.id}
                 onConnect={() => connect(m)}
+                onAccept={() => accept(m)}
                 onViewProfile={() => setProfileId(m.id)}
               />
             </motion.div>
@@ -308,11 +331,13 @@ function MemberCard({
   member,
   busy,
   onConnect,
+  onAccept,
   onViewProfile,
 }: {
   member: DirectoryMember;
   busy: boolean;
   onConnect: () => void;
+  onAccept: () => void;
   onViewProfile: () => void;
 }) {
   const roles = splitList(member.roles).slice(0, 3);
@@ -379,7 +404,11 @@ function MemberCard({
           <Button variant="outline" className="w-full" disabled>
             <Check className="text-emeraldx" aria-hidden /> Introduced
           </Button>
-        ) : member.connectionStatus === "PENDING" ? (
+        ) : member.connectionStatus === "PENDING_IN" ? (
+          <Button className="w-full" onClick={onAccept} disabled={busy}>
+            <Handshake aria-hidden /> Accept introduction
+          </Button>
+        ) : member.connectionStatus === "PENDING_OUT" ? (
           <Button variant="secondary" className="w-full" disabled>
             <Clock aria-hidden /> Requested
           </Button>

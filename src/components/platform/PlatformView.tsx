@@ -407,6 +407,7 @@ export default function PlatformView({ initialIdeaId }: { initialIdeaId?: string
               meId={meId}
               loading={ideasLoading}
               onPostIdea={openPostIdea}
+              onBrowseFeed={() => setTab("feed")}
               onIdeaUpdated={updateIdea}
               onIdeaDeleted={deleteIdea}
             />

@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { generateInviteToken, isAdminRequest, json, jsonError } from "@/lib/auth";
 
@@ -14,7 +15,9 @@ export async function GET(req: Request) {
 // Create (or re-fetch) an invite for an approved application
 export async function POST(req: Request) {
   if (!(await isAdminRequest(req))) return jsonError("Unauthorized", 401);
-  const { applicationId } = (await req.json()) as { applicationId: string };
+  const body = (await req.json().catch(() => null)) as { applicationId?: string } | null;
+  if (!body?.applicationId) return jsonError("Invalid JSON body", 400);
+  const { applicationId } = body;
   const application = await db.application.findUnique({ where: { id: applicationId } });
   if (!application) return jsonError("Application not found", 404);
   if (application.status !== "APPROVED")
@@ -23,13 +26,22 @@ export async function POST(req: Request) {
   const existing = await db.invite.findUnique({ where: { applicationId } });
   if (existing) return json({ invite: existing, reused: true });
 
-  const invite = await db.invite.create({
-    data: {
-      token: generateInviteToken(),
-      applicationId,
-      email: application.email,
-      status: "SENT",
-    },
-  });
-  return json({ invite });
+  try {
+    const invite = await db.invite.create({
+      data: {
+        token: generateInviteToken(),
+        applicationId,
+        email: application.email,
+        status: "SENT",
+      },
+    });
+    return json({ invite });
+  } catch (e) {
+    // double-click race: another tab minted it first — hand back that one
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      const invite = await db.invite.findUnique({ where: { applicationId } });
+      if (invite) return json({ invite, reused: true });
+    }
+    throw e;
+  }
 }

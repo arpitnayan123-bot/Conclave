@@ -197,7 +197,7 @@ function JoinForm({
             </div>
             <div className="space-y-2">
               <Label htmlFor="bio">One-line member bio <span className="text-muted-foreground">(optional)</span></Label>
-              <Textarea id="bio" rows={2}
+              <Textarea id="bio" rows={2} maxLength={600}
                 placeholder="E.g. 3rd-year CSE, built 2 side projects, obsessed with agri-tech…"
                 value={bio} onChange={(e) => setBio(e.target.value)} />
             </div>

@@ -968,10 +968,12 @@ function AppCard({
                   <Detail label="Stage">{app.stage}</Detail>
                   <Detail label="Campus / Year">{app.college} · {app.gradYear}</Detail>
                   <Detail label="LinkedIn">
-                    {app.linkedin ? (
+                    {app.linkedin && /^https?:\/\//i.test(app.linkedin) ? (
                       <a className="text-primary hover:underline inline-flex items-center gap-1" href={app.linkedin} target="_blank" rel="noreferrer">
                         {app.linkedin.slice(0, 40)} <ExternalLink className="w-3 h-3" />
                       </a>
+                    ) : app.linkedin ? (
+                      <span className="text-muted-foreground">{app.linkedin.slice(0, 40)}</span>
                     ) : "—"}
                   </Detail>
                   <div className="sm:col-span-2">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Bell,
@@ -125,9 +125,14 @@ export default function ProfileTab() {
     savePrefs(next, muted ? `Unmuted “${idea.title}”` : `Muted “${idea.title}” — activity is hidden from your bell`);
   };
 
-  // re-sync form if member changes elsewhere (e.g. after re-verify)
+  // seed the form ONCE per member identity — not on every `member` object
+  // update. (savePrefs() calls setMember() with fresh prefs; re-seeding the
+  // whole form on that event used to wipe unsaved profile edits.)
+  const seededIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!member) return;
+    if (seededIdRef.current === member.id) return;
+    seededIdRef.current = member.id;
     setName(member.name);
     setBio(member.bio);
     setSkills(splitList(member.skills));

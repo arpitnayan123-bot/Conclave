@@ -54,7 +54,10 @@ export type DirectoryMember = {
   availableFor: string;
   ideaCount: number;
   ideaTitles: { id: string; title: string; stage: string }[];
-  connectionStatus: string | null; // null | "PENDING" | "ACCEPTED"
+  // directional: "PENDING_IN" = they asked me (accept in place),
+  // "PENDING_OUT" = I asked them, "ACCEPTED" = introduced, null = unacquainted
+  connectionStatus: string | null;
+  connectionId: string | null;
 };
 
 export type MemberBrief = {

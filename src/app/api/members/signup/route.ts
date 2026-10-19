@@ -1,8 +1,12 @@
 import { db } from "@/lib/db";
 import { hashPassword, json, jsonError, signToken } from "@/lib/auth";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   try {
+    if (!rateLimit(`signup:${clientIp(req)}`, 5, 60 * 60_000))
+      return jsonError("Too many signup attempts from this network. Try again later.", 429);
+
     const { token, password, bio, skills, roles } = (await req.json()) as {
       token: string; password: string; bio?: string; skills?: string; roles?: string;
     };
@@ -10,6 +14,11 @@ export async function POST(req: Request) {
     if (!token) return jsonError("Invitation token is required");
     if (!password || password.length < 8)
       return jsonError("Password must be at least 8 characters");
+    if (password.length > 200) return jsonError("Password is too long");
+    // profile fields land on cards and the directory — cap them
+    if (bio && bio.length > 600) return jsonError("Bio is too long (600 characters max)");
+    if (skills && skills.length > 300) return jsonError("Skills list is too long (300 characters max)");
+    if (roles && roles.length > 200) return jsonError("Roles are too long (200 characters max)");
 
     const invite = await db.invite.findUnique({ where: { token }, include: { application: true } });
     if (!invite) return jsonError("This invitation is invalid", 404);

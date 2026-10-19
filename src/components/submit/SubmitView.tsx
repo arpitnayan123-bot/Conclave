@@ -185,7 +185,8 @@ export default function SubmitView() {
                       </div>
                       <div className="space-y-2 sm:col-span-2">
                         <Label htmlFor="linkedin">LinkedIn or portfolio URL <span className="text-muted-foreground">(optional)</span></Label>
-                        <Input id="linkedin" placeholder="linkedin.com/in/you" value={form.linkedin}
+                        <Input id="linkedin" type="url" inputMode="url" maxLength={200}
+                          placeholder="https://linkedin.com/in/you" value={form.linkedin}
                           onChange={(e) => setForm({ ...form, linkedin: e.target.value })} />
                       </div>
                     </div>
@@ -199,7 +200,7 @@ export default function SubmitView() {
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="title">Venture title *</Label>
-                        <Input id="title" placeholder="Udaan — drone logistics for rural healthcare" value={form.ideaTitle}
+                        <Input id="title" placeholder="Udaan — drone logistics for rural healthcare" value={form.ideaTitle} maxLength={120}
                           onChange={(e) => setForm({ ...form, ideaTitle: e.target.value })} />
                       </div>
                       <div className="space-y-2">
@@ -209,7 +210,7 @@ export default function SubmitView() {
                             {pitchLen} / 80 min
                           </span>
                         </div>
-                        <Textarea id="pitch" rows={6}
+                        <Textarea id="pitch" rows={6} maxLength={4000}
                           placeholder="What problem are you solving, for whom, and why now? What have you built so far? What does winning look like in 12 months?"
                           value={form.ideaPitch}
                           onChange={(e) => setForm({ ...form, ideaPitch: e.target.value })} />

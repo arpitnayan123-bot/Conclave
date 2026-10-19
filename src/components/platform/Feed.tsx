@@ -76,12 +76,22 @@ function ideaPermalink(ideaId: string) {
 }
 
 function copyIdeaLink(ideaId: string, title: string) {
-  navigator.clipboard.writeText(ideaPermalink(ideaId));
-  toast.success(`Link to "${title.slice(0, 40)}${title.length > 40 ? "…" : ""}" copied`);
+  if (!navigator.clipboard) {
+    toast.error("Clipboard unavailable — copy it manually");
+    return;
+  }
+  navigator.clipboard
+    .writeText(ideaPermalink(ideaId))
+    .then(() => toast.success(`Link to "${title.slice(0, 40)}${title.length > 40 ? "…" : ""}" copied`))
+    .catch(() => toast.error("Couldn't copy the link"));
 }
+
+const bookmarkBusy = new Set<string>();
 
 /** toggle save-for-later; optimistic via parent state sync */
 async function toggleBookmark(idea: Idea, onBookmarked?: (id: string, b: boolean) => void) {
+  if (bookmarkBusy.has(idea.id)) return; // double-click guard — one flight per idea
+  bookmarkBusy.add(idea.id);
   const next = !idea.bookmarked;
   onBookmarked?.(idea.id, next); // optimistic
   try {
@@ -91,6 +101,8 @@ async function toggleBookmark(idea: Idea, onBookmarked?: (id: string, b: boolean
   } catch (err) {
     onBookmarked?.(idea.id, !next); // roll back
     toast.error((err as Error).message);
+  } finally {
+    bookmarkBusy.delete(idea.id);
   }
 }
 
@@ -171,6 +183,13 @@ export default function Feed({
       .then((r) => setCollections(r.collections))
       .catch(() => {}); // fail-silent: rail simply shows nothing extra
   }, [savedOnly]);
+
+  /* if the active folder was deleted (e.g. in the manager), fall back to All saved */
+  useEffect(() => {
+    if (activeCollection !== "ALL" && !collections.some((c) => c.id === activeCollection)) {
+      setActiveCollection("ALL");
+    }
+  }, [collections, activeCollection]);
 
   /* bookmark flips: keep collections in sync when an idea is unsaved */
   const handleBookmarked = useCallback(
@@ -488,7 +507,7 @@ export default function Feed({
 
       {/* post idea dialog */}
       <Dialog open={postOpen} onOpenChange={onPostOpenChange}>
-        <DialogContent className="sm:max-w-lg" onInteractOutside={(e) => e.preventDefault()}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto" onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="font-display">Present a venture</DialogTitle>
             <DialogDescription>
@@ -514,8 +533,13 @@ export default function Feed({
                 onChange={(e) => setForm((f) => ({ ...f, pitch: e.target.value }))}
                 placeholder="What is it, who is it for, why now? Minimum 40 characters."
                 className="min-h-28"
+                maxLength={4000}
               />
-              <p className="text-xs text-muted-foreground">{form.pitch.trim().length}/40 min characters</p>
+              <p className="text-xs text-muted-foreground">
+                {form.pitch.trim().length < 40
+                  ? `${form.pitch.trim().length}/40 min characters`
+                  : `${form.pitch.length} characters · 4000 max`}
+              </p>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
@@ -597,27 +621,35 @@ export default function Feed({
               knows who&apos;s stepping forward. You can step out anytime.
             </DialogDescription>
           </DialogHeader>
-          <Input
-            value={joinMessage}
-            onChange={(e) => setJoinMessage(e.target.value)}
-            maxLength={140}
-            placeholder="e.g. I've shipped two ML side-projects — happy to own the tech"
-            aria-label="One-line message (optional)"
-          />
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setJoinIdea(null);
-                setJoinMessage("");
-              }}
-            >
-              Cancel
-            </Button>
-            <Button onClick={confirmJoin} disabled={busyId === joinIdea?.id}>
-              <Flame aria-hidden /> I second this venture
-            </Button>
-          </DialogFooter>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              confirmJoin();
+            }}
+          >
+            <Input
+              value={joinMessage}
+              onChange={(e) => setJoinMessage(e.target.value)}
+              maxLength={140}
+              placeholder="e.g. I've shipped two ML side-projects — happy to own the tech"
+              aria-label="One-line message (optional)"
+            />
+            <DialogFooter className="mt-4">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setJoinIdea(null);
+                  setJoinMessage("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={busyId === joinIdea?.id}>
+                <Flame aria-hidden /> I second this venture
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

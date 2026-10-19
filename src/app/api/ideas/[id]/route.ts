@@ -46,6 +46,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return jsonError("Give your idea a clear title");
   if (pitch !== undefined && pitch.trim().length < 40)
     return jsonError("Describe your idea in at least 40 characters");
+  if (title !== undefined && title.trim().length > 120)
+    return jsonError("Title is too long (120 characters max)");
+  if (pitch !== undefined && pitch.trim().length > 4000)
+    return jsonError("Pitch is too long (4000 characters max)");
+  if (needs !== undefined && needs.length > 200)
+    return jsonError("“Needs” is too long (200 characters max)");
+  if (tags !== undefined && tags.length > 200)
+    return jsonError("Tags are too long (200 characters max)");
   if (stage !== undefined && !IDEA_STAGES.includes(stage))
     return jsonError("Invalid stage");
 

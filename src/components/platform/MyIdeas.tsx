@@ -24,6 +24,8 @@ type MyIdeasProps = {
   meId: string;
   loading: boolean;
   onPostIdea: () => void;
+  /** plain "go to the feed" — no composer, used by browse-the-room links */
+  onBrowseFeed: () => void;
   onIdeaUpdated: (idea: Idea) => void;
   onIdeaDeleted: (ideaId: string) => void;
 };
@@ -33,6 +35,7 @@ export default function MyIdeas({
   meId,
   loading,
   onPostIdea,
+  onBrowseFeed,
   onIdeaUpdated,
   onIdeaDeleted,
 }: MyIdeasProps) {
@@ -123,7 +126,7 @@ export default function MyIdeas({
               You haven&apos;t seconded a venture yet. Browse the{" "}
               <button
                 type="button"
-                onClick={onPostIdea}
+                onClick={onBrowseFeed}
                 className="text-primary underline-offset-4 hover:underline"
               >
                 room

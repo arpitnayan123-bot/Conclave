@@ -23,10 +23,12 @@ export default function Requests() {
   const [data, setData] = useState<ConnectionsPayload | null>(null);
   const [emailById, setEmailById] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       // emails are exposed by the directory endpoint; /connections omits them
       const [conns, dir] = await Promise.all([
@@ -38,6 +40,7 @@ export default function Requests() {
       for (const m of dir.members) map[m.id] = m.email;
       setEmailById(map);
     } catch (err) {
+      setError((err as Error).message);
       toast.error((err as Error).message);
     } finally {
       setLoading(false);
@@ -53,6 +56,19 @@ export default function Requests() {
     try {
       await api(`/connections/${id}`, { method: "PATCH", body: { status } });
       toast.success(status === "ACCEPTED" ? "Introduction accepted" : "Introduction declined");
+      await load();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function withdraw(id: string) {
+    setBusyId(id);
+    try {
+      await api(`/connections/${id}`, { method: "DELETE" });
+      toast.success("Request withdrawn");
       await load();
     } catch (err) {
       toast.error((err as Error).message);
@@ -105,6 +121,14 @@ export default function Requests() {
               </div>
             </div>
           ))}
+        </div>
+      ) : error && !data ? (
+        <div className="rounded-xl border border-dashed border-destructive/40 bg-destructive/5 px-4 py-10 text-center">
+          <p className="text-sm text-muted-foreground">The introductions ledger couldn’t be opened.</p>
+          <p className="mt-1 text-xs text-muted-foreground/70">{error}</p>
+          <Button variant="outline" size="sm" className="mt-4" onClick={() => void load()}>
+            Try again
+          </Button>
         </div>
       ) : (
         <div className="max-h-[70vh] overflow-y-auto pr-2">
@@ -168,6 +192,16 @@ export default function Requests() {
                       <Badge variant="secondary" className="shrink-0">
                         <Clock aria-hidden /> Requested
                       </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="shrink-0 text-muted-foreground hover:text-destructive"
+                        onClick={() => void withdraw(c.id)}
+                        disabled={busyId === c.id}
+                        aria-label={`Withdraw your introduction request to ${c.other.name}`}
+                      >
+                        Withdraw
+                      </Button>
                     </article>
                   ))}
                 </div>

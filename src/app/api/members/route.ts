@@ -19,10 +19,25 @@ export async function GET(req: Request) {
     where: { OR: [{ requesterId: auth.id }, { addresseeId: auth.id }] },
   });
 
+  // Directional status so the directory can offer "Accept" on incoming
+  // requests instead of a dead "Requested" chip. DECLINED maps to null
+  // (a fresh request is allowed). ACCEPTED wins over any PENDING row.
+  const rank: Record<string, number> = { ACCEPTED: 3, PENDING_IN: 2, PENDING_OUT: 1 };
   const connMap: Record<string, string> = {};
+  const connIdMap: Record<string, string> = {};
   for (const c of myConnections) {
+    if (c.status === "DECLINED") continue;
     const other = c.requesterId === auth.id ? c.addresseeId : c.requesterId;
-    connMap[other] = c.status;
+    const status =
+      c.status === "ACCEPTED"
+        ? "ACCEPTED"
+        : c.requesterId === auth.id
+          ? "PENDING_OUT"
+          : "PENDING_IN";
+    if (!connMap[other] || rank[status] > rank[connMap[other]]) {
+      connMap[other] = status;
+      connIdMap[other] = c.id;
+    }
   }
 
   return json({
@@ -32,6 +47,7 @@ export async function GET(req: Request) {
       ideaCount: m._count.ideas,
       ideaTitles: m.ideas.map((i) => ({ id: i.id, title: i.title, stage: i.stage })),
       connectionStatus: connMap[m.id] || null,
+      connectionId: connIdMap[m.id] || null,
     })),
   });
 }

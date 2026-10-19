@@ -85,17 +85,31 @@ export function getBearerToken(req: Request): string | null {
   return null;
 }
 
+// Safe own-row fields for the signed-in member. Deliberately EXCLUDES
+// passwordHash and ALL relation includes — nested member rows (idea authors,
+// interested members) must never ride along on auth responses, or their
+// scrypt hashes would leak to the client (offline-crackable).
+const AUTH_MEMBER_SELECT = {
+  id: true,
+  email: true,
+  name: true,
+  college: true,
+  gradYear: true,
+  bio: true,
+  skills: true,
+  roles: true,
+  availableFor: true,
+  notifPrefs: true,
+  createdAt: true,
+} as const;
+
 export async function getAuthMember(req: Request) {
   const payload = verifyToken(getBearerToken(req));
   if (!payload || payload.role !== "member") return null;
-  const member = await db.member.findUnique({
+  return db.member.findUnique({
     where: { id: payload.sub },
-    include: {
-      ideas: { include: { interests: { include: { member: true } } }, orderBy: { createdAt: "desc" } },
-      interests: { include: { idea: { include: { author: true } } } },
-    },
+    select: AUTH_MEMBER_SELECT,
   });
-  return member;
 }
 
 export async function isAdminRequest(req: Request): Promise<boolean> {

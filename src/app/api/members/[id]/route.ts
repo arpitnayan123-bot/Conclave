@@ -75,7 +75,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       viewerInterested: i.interests.some((x) => x.memberId === auth.id),
       commentCount: i._count.comments,
     })),
-    connectionStatus: conn?.status ?? null,
+    // directional: the directory/profile can distinguish incoming vs outgoing
+    connectionStatus: conn
+      ? conn.status === "ACCEPTED"
+        ? "ACCEPTED"
+        : conn.status === "PENDING"
+          ? conn.requesterId === auth.id
+            ? "PENDING_OUT"
+            : "PENDING_IN"
+          : null
+      : null,
+    connectionId: conn?.id ?? null,
     isMe: auth.id === id,
   });
 }
