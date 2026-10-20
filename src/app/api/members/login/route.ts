@@ -13,6 +13,9 @@ export async function POST(req: Request) {
       return jsonError("Too many login attempts. Try again in a minute.", 429);
 
     const { email, password } = (await req.json()) as { email: string; password: string };
+    // field-type guard — a non-string email would crash .trim() as an opaque 500
+    if (email !== undefined && typeof email !== "string") return jsonError("Invalid credentials payload", 400);
+    if (password !== undefined && typeof password !== "string") return jsonError("Invalid credentials payload", 400);
     if (!email || !password) return jsonError("Email and password are required");
 
     const member = await db.member.findUnique({ where: { email: email.trim().toLowerCase() } });

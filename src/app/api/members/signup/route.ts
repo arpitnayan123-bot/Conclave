@@ -11,6 +11,12 @@ export async function POST(req: Request) {
       token: string; password: string; bio?: string; skills?: string; roles?: string;
     };
 
+    // field-type guard — arrays or objects from non-UI clients would crash
+    // .trim() / Prisma downstream as an opaque 500; refuse them cleanly
+    for (const [k, v] of Object.entries({ token, password, bio, skills, roles })) {
+      if (v !== undefined && typeof v !== "string") return jsonError(`Invalid field: ${k}`, 400);
+    }
+
     if (!token) return jsonError("Invitation token is required");
     if (!password || password.length < 8)
       return jsonError("Password must be at least 8 characters");

@@ -13,6 +13,16 @@ export async function POST(req: Request) {
       ideaTitle, ideaPitch, stage, skills, lookingFor,
     } = body as Record<string, string>;
 
+    // field-type guard — every field must be a string (gradYear may arrive as a
+    // number from non-UI clients and is coerced); anything else would crash
+    // the create downstream as an opaque 500, so refuse it cleanly here
+    for (const [k, v] of Object.entries(body as Record<string, unknown>)) {
+      if (v === undefined || v === null || typeof v === "string") continue;
+      if (k === "gradYear" && typeof v === "number") continue;
+      return jsonError(`Invalid field: ${k}`, 400);
+    }
+    const gradYearSafe = gradYear === undefined || gradYear === null ? "" : String(gradYear);
+
     if (!name?.trim() || name.trim().length < 2) return jsonError("Please enter your full name");
     if (!email?.trim() || !/^[^\s@]+@gmail\.com$/i.test(email.trim()))
       return jsonError("A valid Gmail address is required (invitations are sent to Gmail only)");
@@ -60,7 +70,7 @@ export async function POST(req: Request) {
         name: name.trim(),
         email: email.trim().toLowerCase(),
         college,
-        gradYear,
+        gradYear: gradYearSafe,
         linkedin: linkedinSafe,
         ideaTitle: ideaTitle.trim(),
         ideaPitch: ideaPitch.trim(),

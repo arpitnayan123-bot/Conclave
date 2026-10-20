@@ -20,6 +20,9 @@ export async function POST(req: Request) {
     return jsonError("Too many attempts. Try again in a few minutes.", 429);
 
   const { password } = (await req.json()) as { password?: string };
+  // field-type guard — a non-string password would crash the digest update below
+  if (password !== undefined && typeof password !== "string")
+    return jsonError("Invalid credentials payload", 400);
   // compare through SHA-256 digests so the comparison is constant-time and
   // length differences can't leak anything about the real password
   const given = createHash("sha256").update(password ?? "").digest();

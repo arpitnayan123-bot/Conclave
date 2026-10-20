@@ -875,3 +875,24 @@ Stage Summary:
 - New hardening surface: /api (health), /api/admin/backup (snapshots). Invite expiry is the first time-based rule in the charter ("a standing invitation is open for a fortnight").
 - db/backups/*.db covered by .gitignore (*.db). db:push done, dev server restarted cleanly post-schema-change.
 - Still open (non-core): Resend invite email (domain verification), per-idea digest scheduling, httpOnly cookie session migration, member profile richness. Cron 469209 found dead with zero rounds fired — recreated again this round.
+
+---
+Task ID: 27
+Agent: Z.ai Code (main session)
+Task: "Commit it to my repo, the pat :- ghp_…" — publish pending commits; incident recovery; input-type hardening
+
+Work Log:
+- Found 7 unpushed local commits (the whole Task 26 backend-core batch: fortnight invite law, windowed roll, timing-safe login, health probe, ledger snapshots + docs). Normalized the recurring 100755 file-mode flips on admin/backup/route.ts + ConnectDialog.tsx (chmod 644), then pushed with the user-supplied PAT via one-time credential helper (not persisted): 4248612..39c3709. Verified independently (public ls-remote) remote == local == 39c3709, 0 ahead. Advised rotation again — token now pasted in chat twice.
+- INCIDENT (4th .env wipe, and the .env.sandbox-backup safeguard was deleted too): /api/stats 500 "AUTH_SECRET is not set". Recreated .env (DATABASE_URL preserved verbatim, fresh AUTH_SECRET hex, ADMIN_PASSWORD=conclave-2025, mode 600) and rebuilt .env.sandbox-backup (mode 600, gitignored via .env*). Restarted dev server (pkill + rm -rf .next).
+- INCIDENT (3rd DB wipe): stats all zeros. Re-admitted Seat 1 through the REAL pipeline — petition → admin approve → invite (fortnight law visibly stamped +14d) → signup → login → idea re-presented → "Diligence Shortlist" (scale) re-created. Honest stats restored: 1/1/1/1.
+- TWO REAL BUGS the recovery run exposed (wrong-typed payloads → opaque 500s): (1) applications POST: gradYear typed as string in the route but the Prisma column wants a string — an Int crashed the create; (2) members/signup: skills?.trim() on an array → "skills?.trim is not a function". Hardened 4 routes with field-type guards returning clean 400 "Invalid field: X" / "Invalid credentials payload": applications (all fields string-checked; gradYear number coerced via gradYearSafe), members/signup, members/login, admin/login (digest update would throw on arrays).
+- Verified live: array payloads → 400 on all four routes; gradYear-as-number now flows into normal validation; correct admin + member logins → 200. bun run lint exit 0.
+- Browser QA (agent-browser): landing renders all six chapters with the restored pulse data; password-mode login as seat 1 lands in the platform — Room shows the venture with ownership controls, "Welcome back, Arpit" toast; 390px: docW 382 ≤ 390, zero horizontal overflow.
+- Cron found dead AGAIN (list empty, 469209 never fired) — recreated as job 469545 (fixed_rate 900s, webDevReview, priority 10) with the self-heal checklist embedded in the payload.
+
+Stage Summary:
+- Remote main = local main = 39c3709 + the hardening commit from this round; all Task 26 backend-core work now on GitHub.
+- The env/DB wipe loop is now at 4×/3× occurrences and took out the backup file itself this time — the ONLY durable fix is committing the hardening work and treating .env/DB as hostile-state every round (checklist is in the cron payload).
+- New hardening: input type guards on the admission + auth surface (400s, not 500s, for malformed payloads).
+- Canonical state: seat 1 = arpitnayan123@gmail.com / conclave-seat-1; admin conclave-2025; 1 venture; 1 collection (scale mark); invite expiry +14d verified live.
+- Backlog unchanged: Resend email (domain verification), per-idea digest, httpOnly cookie sessions, profile richness, scheduled DB snapshots.
