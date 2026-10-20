@@ -835,3 +835,21 @@ Stage Summary:
 - Schema additions this round: Member.lastNotifReadAt (DateTime?), Connection.acceptedAt (DateTime?) — both pushed with db:push, dev server restarted.
 - Known-good QA state: 2 members (seat 1 canonical + Priya QA seat, genuinely connected), 1 idea (seat 1's), 1 collection (Diligence Shortlist, scale icon, 1 item), 1 accepted connection, 2 applications (1 approved+used, 1 approved for Priya... exactly: applications=2, invites=2, both used).
 - Backlog / next candidates: Resend invite email (blocked on domain verification), Members directory pagination (Room pagination done), per-idea thread notifications digest, invite expiry (schema), member profile richness (links/socials), timing-safe password login (scrypt timing), httpOnly cookie session migration.
+
+---
+Task ID: 25
+Agent: Z.ai Code (main session)
+Task: "Start the cron job to upgrade this" — restart the 15-min webDevReview loop; recover the recurring .env/DB wipe incident; verify GitHub state
+
+Work Log:
+- Verified publication state WITHOUT credentials (repo is public): git ls-remote shows origin/main = 4248612 == local main — all committed work (Task 23 collection marks + Task 24-a/b/c audit fixes) is on GitHub. The PAT push had already completed in the prior session; no token needed or used this round. Normalized a stray file-mode change on ConnectDialog.tsx (100755 -> 100644); working tree clean.
+- Cron: list was EMPTY again (464937 dead). Created the fresh 15-minute webDevReview loop as job 469209 (fixed_rate 900s, priority 10) with the mandatory review payload + full Conclave context (voice/design invariants, honesty rule, dev-server + Turbopack recovery, Git policy, backlog candidates).
+- INCIDENT (recurring, 3rd occurrence): .env had been wiped to DATABASE_URL-only again (dev.log showed /api/stats + /api/members/spotlight 500 "AUTH_SECRET is not set"). Restored AUTH_SECRET (fresh 32-byte hex) + ADMIN_PASSWORD=conclave-2025, restarted dev server (pkill + rm -rf .next). NEW SAFEGUARD: gitignored .env.sandbox-backup (mode 600) mirrors the canonical env — future rounds can self-heal: check `grep -oE '^[A-Z_]+' .env`; if AUTH_SECRET/ADMIN_PASSWORD missing, `cp .env.sandbox-backup .env` and restart.
+- INCIDENT (recurring, 2nd occurrence): SQLite DB had been recreated EMPTY again — 0 members, old rows unrecoverable (no backup existed). Re-admitted Seat 1 through the REAL pipeline (zero fabricated rows): petition POST -> admin login (timing-safe compare verified live) -> PATCH APPROVED -> invite minted (CNCL- token) -> signup (single-use consume) -> member login 200 -> venture presented -> "Diligence Shortlist" collection re-created with the scale mark. Honest stats now: applications 1 / members 1 / ideas 1 / invites 1 / colleges 1 / decided 1.
+- Browser QA (agent-browser 1440x900): landing renders the full six-chapter structure + SEATS HELD band; dev.log shows ZERO 500s/errors since restart. Live API check: /, /api/stats, /api/members/spotlight, /api/pulse all 200.
+
+Stage Summary:
+- Remote = local = 4248612 (162 commits). Cron job 469209 carries the upgrade loop from here — its rounds MUST read this worklog first.
+- Canonical demo state restored: seat 1 = arpitnayan123@gmail.com / conclave-seat-1; admin conclave-2025 (from .env); 1 venture ("Conclave — the founding season"); 1 collection (Diligence Shortlist, scale mark).
+- TOP RISK for future rounds: something in the agent lifecycle wipes .env and/or db/custom.db. BEFORE any QA: verify `grep -c AUTH_SECRET .env` >= 1 (else restore from .env.sandbox-backup) and curl /api/stats (if members=0 unexpectedly, re-admit through the real pipeline — never fabricate rows). A real DB backup strategy (e.g., periodic cp of db/custom.db) is the next hardening step.
+- Backlog unchanged: Resend invite email (domain verification), directory pagination, per-idea thread digest, invite expiry, profile richness (links/socials), timing-safe password login, httpOnly cookie sessions, DB backup hardening.
