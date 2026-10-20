@@ -853,3 +853,25 @@ Stage Summary:
 - Canonical demo state restored: seat 1 = arpitnayan123@gmail.com / conclave-seat-1; admin conclave-2025 (from .env); 1 venture ("Conclave — the founding season"); 1 collection (Diligence Shortlist, scale mark).
 - TOP RISK for future rounds: something in the agent lifecycle wipes .env and/or db/custom.db. BEFORE any QA: verify `grep -c AUTH_SECRET .env` >= 1 (else restore from .env.sandbox-backup) and curl /api/stats (if members=0 unexpectedly, re-admit through the real pipeline — never fabricate rows). A real DB backup strategy (e.g., periodic cp of db/custom.db) is the next hardening step.
 - Backlog unchanged: Resend invite email (domain verification), directory pagination, per-idea thread digest, invite expiry, profile richness (links/socials), timing-safe password login, httpOnly cookie sessions, DB backup hardening.
+
+---
+Task ID: 26
+Agent: Z.ai Code (main session)
+Task: "Audit it one more time and check if the backend is fully built and if not build the backend core and complete it"
+
+Work Log:
+- Full backend audit: inventoried all 31 API routes, the 11-model Prisma schema, and EVERY frontend api() call (via the api() helper's relative-path contract — paths like "/ideas" not "/api/ideas"). VERDICT: every frontend call maps to a live route; the backend was ~95% built. Comments thread (GET/POST/DELETE with author moderation), OTP login (hash-only, burn-on-5), connections (directional status + DELETE), notifications (server read markers), analytics, collections CRUD+items — all complete.
+- Closed the 5 remaining core gaps:
+  1. INVITE EXPIRY (was backlog): Invite.expiresAt (schema, db:push); both mint sites (single POST /api/invites + bulk transactional mint) stamp a 14-day TTL; /api/invites/validate returns 410 with a committee-voice message when lapsed and exposes expiresAt; /api/members/signup enforces the same law (defense in depth). Timestamp-enforced — no sweep job.
+  2. WINDOWED DIRECTORY: GET /api/members supports ?limit (1..100) + ?offset, returns total + hasMore; a paramless call keeps the legacy full listing hard-capped at 200 rows (CommandPalette/Requests unaffected). Directory.tsx loads 50 at a time with a "Summon more of the roll" button.
+  3. TIMING-SAFE LOGIN: unknown emails now run the same scrypt verify against a module-level dummy hash — "no such member" and "wrong password" are wall-clock indistinguishable (email enumeration defence).
+  4. REAL HEALTH PROBE: GET /api (was "Hello, world!") now returns { ok, service, database: up|down (SELECT 1 round-trip), time } — the pollable liveness signal QA rounds were missing.
+  5. LEDGER SNAPSHOTS: NEW POST/GET /api/admin/backup (admin-gated) — VACUUM INTO a consistent point-in-time SQLite image into db/backups/, prunes to newest 5, lists snapshots. Direct answer to the recurring DB-wipe incident; path is server-generated (no injection surface). BUG FIXED en route: same-second snapshots collided ("output file already exists" P2010) — a -2/-3… suffix walk now guarantees uniqueness.
+- Frontend visibility: JoinView shows "Open until <date>" on a valid invitation; the committee console marks SENT invites "Open until X" / "Lapsed — mint a fresh invitation".
+- VERIFIED: health {ok:true, database:up}; 6 rapid snapshots → all ok, exactly 5 kept, collisions suffixed; expiry lifecycle e2e — mint stamps +14d, validate fresh 200, tampered-past validate 410, signup expired 410, QA petition then deleted (invite cascaded), stats back to honest 1/1/1/1; directory windowed {total, hasMore} + legacy shape intact; login 200 seat-1 / 401 unknown; browser pass (landing six chapters, seat-1 login, Members tab, console quiet apart from a pre-existing THREE.Clock dev deprecation); mobile 390 zero horizontal overflow on platform + landing; bun run lint 0 errors 0 warnings.
+
+Stage Summary:
+- Backend core is COMPLETE: admission pipeline, member lifecycle, room, collections, introductions, notifications, analytics, health, snapshots — every model served, every UI call answered, no unbounded reads, no timing leaks.
+- New hardening surface: /api (health), /api/admin/backup (snapshots). Invite expiry is the first time-based rule in the charter ("a standing invitation is open for a fortnight").
+- db/backups/*.db covered by .gitignore (*.db). db:push done, dev server restarted cleanly post-schema-change.
+- Still open (non-core): Resend invite email (domain verification), per-idea digest scheduling, httpOnly cookie session migration, member profile richness. Cron 469209 found dead with zero rounds fired — recreated again this round.
