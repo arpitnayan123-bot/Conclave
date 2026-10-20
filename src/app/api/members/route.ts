@@ -1,23 +1,37 @@
 import { db } from "@/lib/db";
 import { getAuthMember, json, jsonError } from "@/lib/auth";
 
-// Member directory for the private network
+// Member directory for the private network.
+// Windowed: ?limit (1..100, default 50) + ?offset — the roll stays fast as the
+// house grows. A call with no window params keeps the legacy full listing,
+// hard-capped at 200 rows (CommandPalette and Requests rely on it).
 export async function GET(req: Request) {
   const auth = await getAuthMember(req);
   if (!auth) return jsonError("Unauthorized", 401);
 
-  const members = await db.member.findMany({
-    where: { id: { not: auth.id } },
-    include: {
-      ideas: { select: { id: true, title: true, stage: true } },
-      _count: { select: { ideas: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const url = new URL(req.url);
+  const parsedLimit = Number.parseInt(url.searchParams.get("limit") ?? "", 10);
+  const parsedOffset = Number.parseInt(url.searchParams.get("offset") ?? "", 10);
+  const hasWindow = Number.isFinite(parsedLimit);
+  const limit = hasWindow ? Math.min(Math.max(parsedLimit, 1), 100) : 200;
+  const offset = Number.isFinite(parsedOffset) ? Math.max(parsedOffset, 0) : 0;
 
-  const myConnections = await db.connection.findMany({
-    where: { OR: [{ requesterId: auth.id }, { addresseeId: auth.id }] },
-  });
+  const [members, total, myConnections] = await Promise.all([
+    db.member.findMany({
+      where: { id: { not: auth.id } },
+      include: {
+        ideas: { select: { id: true, title: true, stage: true } },
+        _count: { select: { ideas: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      skip: offset,
+    }),
+    db.member.count({ where: { id: { not: auth.id } } }),
+    db.connection.findMany({
+      where: { OR: [{ requesterId: auth.id }, { addresseeId: auth.id }] },
+    }),
+  ]);
 
   // Directional status so the directory can offer "Accept" on incoming
   // requests instead of a dead "Requested" chip. DECLINED maps to null
@@ -52,5 +66,7 @@ export async function GET(req: Request) {
       connectionStatus: connMap[m.id] || null,
       connectionId: connIdMap[m.id] || null,
     })),
+    total,
+    hasMore: offset + members.length < total,
   });
 }
