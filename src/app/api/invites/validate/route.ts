@@ -10,6 +10,8 @@ export async function GET(req: Request) {
   });
   if (!invite) return jsonError("This invitation link is invalid", 404);
   if (invite.status === "USED") return jsonError("This invitation has already been used", 410);
+  if (invite.expiresAt && invite.expiresAt.getTime() < Date.now())
+    return jsonError("This invitation has expired — ask the committee to extend a fresh one", 410);
   return json({
     valid: true,
     invite: {
@@ -17,6 +19,7 @@ export async function GET(req: Request) {
       name: invite.application.name,
       college: invite.application.college,
       ideaTitle: invite.application.ideaTitle,
+      expiresAt: invite.expiresAt ? invite.expiresAt.toISOString() : null,
     },
   });
 }

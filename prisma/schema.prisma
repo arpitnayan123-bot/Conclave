@@ -54,6 +54,7 @@ model Invite {
   status        String    @default("SENT") // SENT | USED
   createdAt     DateTime  @default(now())
   usedAt        DateTime?
+  expiresAt     DateTime? // a standing invitation is open for a fortnight, then lapses back to the committee
   member        Member?
 }
 

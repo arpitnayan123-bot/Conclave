@@ -2,6 +2,11 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { generateInviteToken, isAdminRequest, json, jsonError } from "@/lib/auth";
 
+// A standing invitation is open for a fortnight, then it lapses back to the
+// committee (who can mint a fresh one). Enforced by timestamp at validate and
+// signup — no sweep job needed.
+const INVITE_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+
 // List all invites (admin)
 export async function GET(req: Request) {
   if (!(await isAdminRequest(req))) return jsonError("Unauthorized", 401);
@@ -33,6 +38,7 @@ export async function POST(req: Request) {
         applicationId,
         email: application.email,
         status: "SENT",
+        expiresAt: new Date(Date.now() + INVITE_TTL_MS),
       },
     });
     return json({ invite });

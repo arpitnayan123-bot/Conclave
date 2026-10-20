@@ -1,6 +1,9 @@
 import { db } from "@/lib/db";
 import { generateInviteToken, isAdminRequest, json, jsonError } from "@/lib/auth";
 
+// Same fortnight TTL as single mints — see src/app/api/invites/route.ts.
+const INVITE_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+
 const ACTIONS = ["APPROVED", "REJECTED", "PENDING"] as const;
 type Action = (typeof ACTIONS)[number];
 
@@ -61,7 +64,13 @@ export async function POST(req: Request) {
       const needsInvite = targets.filter((t) => !t.invite);
       for (const t of needsInvite) {
         const invite = await tx.invite.create({
-          data: { token: generateInviteToken(), applicationId: t.id, email: t.email, status: "SENT" },
+          data: {
+            token: generateInviteToken(),
+            applicationId: t.id,
+            email: t.email,
+            status: "SENT",
+            expiresAt: new Date(Date.now() + INVITE_TTL_MS),
+          },
         });
         createdInvites.push({
           id: invite.id,

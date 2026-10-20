@@ -23,6 +23,8 @@ export async function POST(req: Request) {
     const invite = await db.invite.findUnique({ where: { token }, include: { application: true } });
     if (!invite) return jsonError("This invitation is invalid", 404);
     if (invite.status === "USED") return jsonError("This invitation has already been used", 410);
+    if (invite.expiresAt && invite.expiresAt.getTime() < Date.now())
+      return jsonError("This invitation has expired — ask the committee to extend a fresh one", 410);
 
     const emailExists = await db.member.findUnique({ where: { email: invite.email } });
     if (emailExists) return jsonError("An account with this email already exists", 409);
