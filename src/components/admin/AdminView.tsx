@@ -50,6 +50,7 @@ type Invite = {
   email: string;
   status: "SENT" | "USED";
   createdAt: string;
+  expiresAt?: string | null;
   application: { name: string; ideaTitle: string; college: string };
   member: { id: string; name: string; email: string } | null;
 };
@@ -1160,6 +1161,18 @@ function InvitesPanel({ invites }: { invites: Invite[] | null }) {
                 {inv.application.name} <span className="text-muted-foreground font-normal">· {inv.application.ideaTitle}</span>
               </p>
               <p className="text-xs text-muted-foreground font-mono truncate">{inv.email} → {inv.token}</p>
+              {inv.status === "SENT" && inv.expiresAt ? (
+                <p
+                  className={cn(
+                    "mt-0.5 text-[11px]",
+                    new Date(inv.expiresAt).getTime() < Date.now() ? "text-destructive" : "text-gold/80"
+                  )}
+                >
+                  {new Date(inv.expiresAt).getTime() < Date.now()
+                    ? "Lapsed — mint a fresh invitation"
+                    : `Open until ${new Date(inv.expiresAt).toLocaleDateString()}`}
+                </p>
+              ) : null}
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="outline" className={inv.status === "USED" ? "border-emeraldx/50 text-emeraldx" : "border-gold/40 text-gold"}>

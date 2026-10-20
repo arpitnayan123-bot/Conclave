@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
-  ArrowLeft, BadgeCheck, GraduationCap, KeyRound, Lightbulb, Loader2,
+  ArrowLeft, BadgeCheck, Clock, GraduationCap, KeyRound, Lightbulb, Loader2,
   LockKeyhole, Mail, PartyPopper, ShieldX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ type InviteInfo = {
   name: string;
   college: string;
   ideaTitle: string;
+  expiresAt?: string | null;
 };
 
 type ValidationResult = { token: string; info?: InviteInfo; error?: string };
@@ -175,6 +176,17 @@ function JoinForm({
               <Lightbulb className="w-4 h-4 text-gold shrink-0" />
               <span className="text-muted-foreground">Selected venture:</span> <span className="truncate">{info.ideaTitle}</span>
             </p>
+            {info.expiresAt ? (
+              <p className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-gold shrink-0" />
+                <span className="text-muted-foreground">Open until:</span>{" "}
+                {new Date(info.expiresAt).toLocaleDateString(undefined, {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-4">

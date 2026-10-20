@@ -8,6 +8,7 @@ import {
   Clock,
   Handshake,
   Lightbulb,
+  Loader2,
   MapPin,
   Search,
   SearchX,
@@ -42,8 +43,12 @@ import {
 import { cn } from "@/lib/utils";
 
 export default function Directory() {
+  // The roll arrives windowed (50 at a time) and grows on demand.
+  const DIRECTORY_PAGE = 50;
   const [members, setMembers] = useState<DirectoryMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [moreLoading, setMoreLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [search, setSearch] = useState("");
   const [skillFilter, setSkillFilter] = useState<string | null>(null);
   const [chapterFilter, setChapterFilter] = useState<string | null>(null);
@@ -55,14 +60,35 @@ export default function Directory() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api<{ members: DirectoryMember[] }>("/members");
+      const res = await api<{ members: DirectoryMember[]; hasMore?: boolean }>(
+        `/members?limit=${DIRECTORY_PAGE}&offset=0`
+      );
       setMembers(res.members);
+      setHasMore(Boolean(res.hasMore));
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const loadMore = useCallback(async () => {
+    setMoreLoading(true);
+    try {
+      const res = await api<{ members: DirectoryMember[]; hasMore?: boolean }>(
+        `/members?limit=${DIRECTORY_PAGE}&offset=${members.length}`
+      );
+      setMembers((prev) => {
+        const seen = new Set(prev.map((m) => m.id));
+        return [...prev, ...res.members.filter((m) => !seen.has(m.id))];
+      });
+      setHasMore(Boolean(res.hasMore));
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setMoreLoading(false);
+    }
+  }, [members.length]);
 
   useEffect(() => {
     void load();
@@ -308,6 +334,24 @@ export default function Directory() {
           ))}
         </motion.div>
       )}
+
+      {hasMore && !loading ? (
+        <div className="mt-6 flex justify-center">
+          <Button
+            variant="outline"
+            onClick={loadMore}
+            disabled={moreLoading}
+            className="min-h-[44px]"
+          >
+            {moreLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <Users className="mr-2 h-4 w-4 text-gold" aria-hidden />
+            )}
+            {moreLoading ? "Summoning the rest of the roll…" : "Summon more of the roll"}
+          </Button>
+        </div>
+      ) : null}
 
       {/* member profile viewer */}
       <MemberProfileDialog
